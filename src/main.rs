@@ -1,18 +1,18 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")] // hide console window on Windows in release
+mod explorer;
+mod file_dialog;
 mod gui;
+mod icon;
+mod menu;
+mod open;
 
-use brickadia::read::SaveReader;
-use brickadia::save::{Preview, SaveData};
+use brickadia::save::SaveData;
 use eframe::egui;
 use egui::*;
-use rfd::FileDialog;
-use std::fs::File;
-use std::io::{BufReader, Cursor};
 use std::path::PathBuf;
-use std::sync::{mpsc, mpsc::Receiver};
-use std::thread;
+use std::sync::mpsc::Receiver;
 
-const DEFAULT_WINDOW_SIZE: Vec2 = Vec2::new(900.0, 720.0);
+const DEFAULT_WINDOW_SIZE: Vec2 = Vec2::new(1280.0, 720.0);
 
 const MAX_PREVIEW_WIDTH: f32 = 640.0;
 const MAX_PREVIEW_HEIGHT: f32 = 360.0;
@@ -21,6 +21,11 @@ const MAX_PREVIEW_ASPECT_RATIO: f32 = MAX_PREVIEW_WIDTH / MAX_PREVIEW_HEIGHT;
 fn main() {
     let native_options = eframe::NativeOptions {
         initial_window_size: Some(DEFAULT_WINDOW_SIZE),
+        icon_data: Some(eframe::IconData {
+            rgba: icon::ICON.to_vec(),
+            width: 32,
+            height: 32,
+        }),
         ..Default::default()
     };
     eframe::run_native(
@@ -33,8 +38,8 @@ fn main() {
 struct EditorApp {
     file_path_receiver: Option<Receiver<Option<PathBuf>>>,
     file_path: Option<PathBuf>,
-    _folder_path_receiver: Option<Receiver<Option<PathBuf>>>,
-    _folder_path: Option<PathBuf>,
+    folder_path_receiver: Option<Receiver<Option<PathBuf>>>,
+    folder_path: Option<PathBuf>,
     save_data: Option<brickadia::save::SaveData>,
     preview_handle: Option<TextureHandle>,
 }
@@ -44,8 +49,8 @@ impl EditorApp {
         Self {
             file_path_receiver: None,
             file_path: None,
-            _folder_path_receiver: None,
-            _folder_path: None,
+            folder_path_receiver: None,
+            folder_path: None,
             save_data: None,
             preview_handle: None,
         }
@@ -53,90 +58,66 @@ impl EditorApp {
 }
 
 impl eframe::App for EditorApp {
-    fn update(&mut self, ctx: &Context, _frame: &mut eframe::Frame) {
+    fn update(&mut self, ctx: &Context, frame: &mut eframe::Frame) {
+        if ctx.input().key_pressed(Key::F11) {
+            if frame.info().window_info.fullscreen {
+                frame.set_fullscreen(false);
+            } else {
+                frame.set_fullscreen(true);
+            }
+        }
         self.receive_file_dialog_paths(ctx);
-        egui::TopBottomPanel::top("menu_panel").show(ctx, |ui| {
+        TopBottomPanel::top("menu_panel").show(ctx, |ui| {
             self.show_menu(ui);
         });
-        egui::TopBottomPanel::bottom("info_panel").show(ctx, |ui| {
-            self.bottom_panel(ui);
-        });
-        egui::SidePanel::left("file_panel")
-            .resizable(false)
+        TopBottomPanel::bottom("info_panel")
+            .frame(gui::BOTTOM_FRAME)
             .show(ctx, |ui| {
-                ui.label("EXPLORER");
+                self.bottom_panel(ui);
             });
-        egui::CentralPanel::default().show(ctx, |ui| {
+        SidePanel::left("file_panel")
+            .resizable(true)
+            .max_width(DEFAULT_WINDOW_SIZE.x / 2.0)
+            .show(ctx, |ui| {
+                self.show_explorer(ui, ctx);
+            });
+        CentralPanel::default().show(ctx, |ui| {
             if self.file_path.is_none() {
                 self.starting_page(ui);
             } else if self.save_data.is_some() {
-                ScrollArea::vertical()
-                    .always_show_scroll(true)
-                    .stick_to_right(true)
-                    .show(ui, |ui| {
-                        self.save_page(ui);
-                    });
+                ScrollArea::vertical().stick_to_right(true).show(ui, |ui| {
+                    self.save_page(ui);
+                    ui.allocate_space([ui.available_width(), 0.0].into());
+                });
             }
         });
     }
 }
 
 impl EditorApp {
-    fn receive_file_dialog_paths(&mut self, ctx: &Context) {
-        if let Some(rx) = &self.file_path_receiver {
-            if let Ok(data) = rx.try_recv() {
-                self.file_path_receiver = None;
-                if let Some(path) = data {
-                    if let Ok(file) = File::open(&path) {
-                        let reader = BufReader::new(file);
-                        if let Ok(mut save_reader) = SaveReader::new(reader) {
-                            if let Ok(save_data) = save_reader.read_all() {
-                                self.save_data = Some(save_data);
-                                self.file_path = Some(path);
-                                self.load_preview(ctx);
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    fn show_menu(&mut self, ui: &mut egui::Ui) {
-        egui::menu::bar(ui, |ui| {
-            ui.menu_button("File", |ui| {
-                if ui.button("Open File...").clicked() {
-                    self.choose_file();
-                }
-                ui.separator();
-                if ui.button("Save").clicked() {}
-                if ui.button("Save As...").clicked() {}
-                ui.separator();
-                if ui.button("Import").clicked() {}
-                ui.separator();
-                if ui.button("Exit").clicked() {
-                    std::process::exit(0);
-                }
-            });
-            ui.menu_button("Edit", |ui| if ui.button("Open").clicked() {});
-            ui.menu_button("Help", |ui| if ui.button("About").clicked() {});
-        });
-    }
-
     fn bottom_panel(&self, ui: &mut egui::Ui) {
-        if let Some(file_path) = &self.file_path {
-            // if let Some(filename) = file_path.file_name() {
-            //     ui.label(filename.to_string_lossy());
-            // }
-            ui.label(file_path.to_string_lossy());
-        }
+        ui.horizontal(|ui| {
+            if let Some(file_path) = &self.file_path {
+                ui.strong(file_path.to_string_lossy());
+            }
+            ui.with_layout(egui::Layout::right_to_left(egui::Align::LEFT), |ui| {
+                ui.add_space(5.0);
+                let icon = RichText::new("\u{e624}").strong();
+                ui.hyperlink_to(icon, "https://github.com/Kmschr/brs_edit");
+            });
+        });
     }
 
     fn starting_page(&mut self, ui: &mut egui::Ui) {
         ui.heading("BRS Editor");
-        ui.label("Start");
+        gui::header(ui, "Start");
+        ui.add_space(5.0);
         if ui.link("🗋 Open File...").clicked() {
             self.choose_file();
+        }
+        ui.add_space(5.0);
+        if ui.link("🗁 Open Folder...").clicked() {
+            self.choose_folder();
         }
     }
 
@@ -145,53 +126,6 @@ impl EditorApp {
             show_metadata(save_data, ui);
             show_header_one(save_data, ui);
             show_preview(&self.preview_handle, ui);
-        }
-    }
-
-    fn choose_file(&mut self) {
-        if self.file_path_receiver.is_none() {
-            let (tx, rx) = mpsc::channel();
-            self.file_path_receiver = Some(rx);
-
-            thread::spawn(move || {
-                let files = FileDialog::new()
-                    .set_directory("%USERPROFILE%/AppData")
-                    .add_filter("Brickadia Savefile", &["brs", "BRS"])
-                    .pick_file();
-                tx.send(files).unwrap();
-            });
-        }
-    }
-
-    fn load_preview(&mut self, ctx: &Context) {
-        self.preview_handle = None;
-        if let Some(save_data) = &self.save_data {
-            match &save_data.preview {
-                Preview::JPEG(data) | Preview::PNG(data) => {
-                    if let Ok(img) = image::io::Reader::new(Cursor::new(data)).with_guessed_format()
-                    {
-                        if let Ok(img) = img.decode() {
-                            let img_size = [img.width() as _, img.height() as _];
-                            let img_rgba8 = img.to_rgba8();
-                            let img_pixels = img_rgba8.as_flat_samples();
-                            let img =
-                                ColorImage::from_rgba_unmultiplied(img_size, img_pixels.as_slice());
-                            self.preview_handle =
-                                Some(ctx.load_texture("Save-Preview", img, TextureFilter::Nearest));
-                        } else {
-                            println!("Couldn't decode image")
-                        }
-                    } else {
-                        println!("Couldn't interpret preview data")
-                    }
-                }
-                Preview::None => {
-                    println!("No preview image to load")
-                }
-                _ => {
-                    println!("Preview image in unknown format")
-                }
-            }
         }
     }
 }
