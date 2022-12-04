@@ -3,12 +3,16 @@ mod explorer;
 mod file_dialog;
 mod gui;
 mod icon;
+mod input;
 mod menu;
 mod open;
+mod save;
+mod view;
 
 use brickadia::save::SaveData;
 use eframe::egui;
 use egui::*;
+use file_dialog::default_build_directory;
 use std::path::PathBuf;
 use std::sync::mpsc::Receiver;
 
@@ -36,6 +40,7 @@ fn main() {
 }
 
 struct EditorApp {
+    default_build_dir: Option<PathBuf>,
     file_path_receiver: Option<Receiver<Option<PathBuf>>>,
     file_path: Option<PathBuf>,
     folder_path_receiver: Option<Receiver<Option<PathBuf>>>,
@@ -47,6 +52,7 @@ struct EditorApp {
 impl EditorApp {
     fn new(_cc: &eframe::CreationContext) -> Self {
         Self {
+            default_build_dir: default_build_directory(),
             file_path_receiver: None,
             file_path: None,
             folder_path_receiver: None,
@@ -58,17 +64,11 @@ impl EditorApp {
 }
 
 impl eframe::App for EditorApp {
-    fn update(&mut self, ctx: &Context, frame: &mut eframe::Frame) {
-        if ctx.input().key_pressed(Key::F11) {
-            if frame.info().window_info.fullscreen {
-                frame.set_fullscreen(false);
-            } else {
-                frame.set_fullscreen(true);
-            }
-        }
+    fn update(&mut self, ctx: &egui::Context, frame: &mut eframe::Frame) {
+        input::handle_key_presses(ctx, frame);
         self.receive_file_dialog_paths(ctx);
         TopBottomPanel::top("menu_panel").show(ctx, |ui| {
-            self.show_menu(ui);
+            self.show_menu(ui, frame);
         });
         TopBottomPanel::bottom("info_panel")
             .frame(gui::BOTTOM_FRAME)
@@ -119,6 +119,21 @@ impl EditorApp {
         if ui.link("🗁 Open Folder...").clicked() {
             self.choose_folder();
         }
+        ui.add_space(5.0);
+        gui::header(ui, "Common Places");
+        ui.add_space(5.0);
+        if let Some(default_build_dir) = &self.default_build_dir {
+            ui.horizontal(|ui| {
+                ui.spacing_mut().item_spacing.x = 10.0;
+                if ui.link("Builds").clicked() {
+                    self.folder_path = Some(default_build_dir.clone());
+                };
+                ui.strong(default_build_dir.to_string_lossy());
+            });
+        }
+
+        ui.label("Documents");
+        ui.label("Downloads");
     }
 
     fn save_page(&mut self, ui: &mut egui::Ui) {
@@ -154,7 +169,7 @@ fn show_header_one(save_data: &mut SaveData, ui: &mut egui::Ui) {
     ui.strong("Description");
     ui.add(TextEdit::multiline(&mut save_data.header1.description).desired_width(600.0));
     ui.strong("Brickcount");
-    ui.add(DragValue::new(&mut save_data.header1.brick_count));
+    ui.add_enabled(false, DragValue::new(&mut save_data.header1.brick_count));
 }
 
 fn show_preview(preview: &Option<TextureHandle>, ui: &mut egui::Ui) {

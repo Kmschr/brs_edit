@@ -1,3 +1,5 @@
+use std::env;
+use std::path::PathBuf;
 use std::{fs::File, io::BufReader, sync::mpsc, thread};
 
 use crate::open;
@@ -61,5 +63,21 @@ impl EditorApp {
                 tx.send(files).unwrap();
             });
         }
+    }
+}
+
+pub fn default_build_directory() -> Option<PathBuf> {
+    match env::consts::OS {
+        "windows" => dirs::data_local_dir().and_then(|path| {
+            Some(PathBuf::from(
+                path.to_string_lossy().to_string() + "\\Brickadia\\Saved\\Builds",
+            ))
+        }),
+        "linux" => dirs::config_dir().and_then(|path| {
+            Some(PathBuf::from(
+                path.to_string_lossy().to_string() + "/Epic/Brickadia/Saved/Builds",
+            ))
+        }),
+        _ => None,
     }
 }
