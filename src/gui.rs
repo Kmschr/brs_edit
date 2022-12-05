@@ -44,3 +44,7 @@ pub fn header(ui: &mut Ui, text: &str) {
     let text = RichText::new(text).color(Color32::WHITE);
     ui.heading(text);
 }
+
+pub fn fill_horizontal(ui: &mut Ui) {
+    ui.allocate_space([ui.available_width(), 0.0].into());
+}

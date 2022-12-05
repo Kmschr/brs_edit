@@ -1,10 +1,13 @@
 use std::env;
+use std::io::Cursor;
 use std::path::PathBuf;
+use std::sync::mpsc::Receiver;
 use std::{fs::File, io::BufReader, sync::mpsc, thread};
 
 use crate::open;
 use crate::EditorApp;
 use brickadia::read::SaveReader;
+use brickadia::save::Preview;
 use egui::Context;
 use rfd::FileDialog;
 
@@ -34,6 +37,44 @@ impl EditorApp {
                 self.folder_path = data;
             }
         }
+
+        if let Some(rx) = &self.preview_path_receiver {
+            if let Ok(data) = rx.try_recv() {
+                println!("Preview path receiver has data\n {:?}", data);
+                self.preview_path_receiver = None;
+                if let Some(save_data) = &mut self.save_data {
+                    if let Some(path) = data {
+                        if let Ok(buffer) = std::fs::read(path) {
+                            if let Ok(format) = image::guess_format(&buffer) {
+                                match format {
+                                    image::ImageFormat::Png => {
+                                        println!("Setting PNG data");
+                                        save_data.preview = Preview::PNG(buffer.to_vec());
+                                    }
+                                    image::ImageFormat::Jpeg => {
+                                        println!("Setting JPEF data");
+                                        save_data.preview = Preview::JPEG(buffer.to_vec());
+                                    }
+                                    _ => {
+                                        println!("Setting other format data");
+                                        if let Ok(img) = image::load(Cursor::new(buffer), format) {
+                                            let mut buf = Cursor::new(Vec::new());
+                                            if img
+                                                .write_to(&mut buf, image::ImageFormat::Png)
+                                                .is_ok()
+                                            {
+                                                save_data.preview = Preview::PNG(buf.into_inner());
+                                            }
+                                        }
+                                    }
+                                }
+                                self.preview_handle = open::load_preview(&save_data, ctx);
+                            }
+                        }
+                    }
+                }
+            }
+        }
     }
 
     pub fn choose_file(&mut self) {
@@ -42,11 +83,11 @@ impl EditorApp {
             self.file_path_receiver = Some(rx);
 
             thread::spawn(move || {
-                let files = FileDialog::new()
+                let file = FileDialog::new()
                     .set_directory("%USERPROFILE%/AppData")
                     .add_filter("Brickadia Savefile", &["brs", "BRS"])
                     .pick_file();
-                tx.send(files).unwrap();
+                tx.send(file).unwrap();
             });
         }
     }
@@ -57,13 +98,27 @@ impl EditorApp {
             self.folder_path_receiver = Some(rx);
 
             thread::spawn(move || {
-                let files = FileDialog::new()
+                let folder = FileDialog::new()
                     .set_directory("%USERPROFILE%/AppData")
                     .pick_folder();
-                tx.send(files).unwrap();
+                tx.send(folder).unwrap();
             });
         }
     }
+}
+
+pub fn choose_preview() -> Receiver<Option<PathBuf>> {
+    let (tx, rx) = mpsc::channel();
+    thread::spawn(move || {
+        let file = FileDialog::new()
+            .add_filter(
+                "Image",
+                &["png", "jpg", "jpeg", "tiff", "gif", "bmp", "ico", "webp"],
+            )
+            .pick_file();
+        tx.send(file).unwrap();
+    });
+    rx
 }
 
 pub fn default_build_directory() -> Option<PathBuf> {

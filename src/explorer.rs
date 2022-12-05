@@ -1,14 +1,17 @@
 use brickadia::read::SaveReader;
+use egui::Color32;
 use std::{fs::File, io::BufReader, path::PathBuf};
 
 use egui::{CollapsingHeader, Context, RichText, ScrollArea, Ui};
 
+use crate::gui;
 use crate::open;
 use crate::EditorApp;
 
 impl EditorApp {
     pub fn show_explorer(&mut self, ui: &mut Ui, ctx: &Context) {
         ui.label("EXPLORER");
+        ui.visuals_mut().hyperlink_color = Color32::LIGHT_GRAY;
         ScrollArea::vertical().show(ui, |ui| {
             if let Some(folder_path) = &self.folder_path {
                 let path_to_load = self.display_path(&folder_path, ui, true);
@@ -25,8 +28,9 @@ impl EditorApp {
                     }
                 }
             }
+            gui::fill_horizontal(ui);
         });
-        ui.allocate_space([ui.available_width(), 0.0].into());
+        gui::fill_horizontal(ui);
     }
 
     fn display_path(&self, path: &PathBuf, ui: &mut Ui, root: bool) -> Option<PathBuf> {

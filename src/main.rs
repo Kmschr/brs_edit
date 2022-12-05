@@ -47,6 +47,7 @@ struct EditorApp {
     folder_path: Option<PathBuf>,
     save_data: Option<brickadia::save::SaveData>,
     preview_handle: Option<TextureHandle>,
+    preview_path_receiver: Option<Receiver<Option<PathBuf>>>,
 }
 
 impl EditorApp {
@@ -59,6 +60,7 @@ impl EditorApp {
             folder_path: None,
             save_data: None,
             preview_handle: None,
+            preview_path_receiver: None,
         }
     }
 }
@@ -87,7 +89,7 @@ impl eframe::App for EditorApp {
             } else if self.save_data.is_some() {
                 ScrollArea::vertical().stick_to_right(true).show(ui, |ui| {
                     self.save_page(ui);
-                    ui.allocate_space([ui.available_width(), 0.0].into());
+                    gui::fill_horizontal(ui);
                 });
             }
         });
@@ -103,6 +105,7 @@ impl EditorApp {
             ui.with_layout(egui::Layout::right_to_left(egui::Align::LEFT), |ui| {
                 ui.add_space(5.0);
                 let icon = RichText::new("\u{e624}").strong();
+                ui.visuals_mut().hyperlink_color = Color32::WHITE;
                 ui.hyperlink_to(icon, "https://github.com/Kmschr/brs_edit");
             });
         });
@@ -140,7 +143,10 @@ impl EditorApp {
         if let Some(save_data) = &mut self.save_data {
             show_metadata(save_data, ui);
             show_header_one(save_data, ui);
-            show_preview(&self.preview_handle, ui);
+            let new_preview_receiver = show_preview(&self.preview_handle, ui);
+            if new_preview_receiver.is_some() {
+                self.preview_path_receiver = new_preview_receiver;
+            }
         }
     }
 }
@@ -172,12 +178,16 @@ fn show_header_one(save_data: &mut SaveData, ui: &mut egui::Ui) {
     ui.add_enabled(false, DragValue::new(&mut save_data.header1.brick_count));
 }
 
-fn show_preview(preview: &Option<TextureHandle>, ui: &mut egui::Ui) {
+fn show_preview(
+    preview: &Option<TextureHandle>,
+    ui: &mut egui::Ui,
+) -> Option<Receiver<Option<PathBuf>>> {
+    let mut ret = None;
     ui.add_space(15.0);
     gui::header(ui, "Preview");
     ui.add_space(5.0);
     if gui::button(ui, "Choose Image...", true) {
-        // todo: change preview
+        ret = Some(file_dialog::choose_preview());
     }
     if let Some(texture) = preview {
         let preview_size = texture.size_vec2();
@@ -190,6 +200,7 @@ fn show_preview(preview: &Option<TextureHandle>, ui: &mut egui::Ui) {
                 ui.image(texture, display_size);
             });
     }
+    ret
 }
 
 fn contain_preview_size(preview_size: Vec2) -> Vec2 {
