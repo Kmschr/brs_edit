@@ -168,12 +168,26 @@ fn show_metadata(save_data: &mut SaveData, ui: &mut egui::Ui) {
 fn show_header_one(save_data: &mut SaveData, ui: &mut egui::Ui) {
     ui.add_space(15.0);
     gui::header(ui, "Header1");
+
     ui.add_space(5.0);
+
+    ui.strong("Map");
+    ui.label("Which game environment the save was generated in.");
+    ui.text_edit_singleline(&mut save_data.header1.map);
+
+    ui.add_space(5.0);
+
+    ui.strong("Description");
+    ui.add(TextEdit::multiline(&mut save_data.header1.description).desired_width(600.0));
+
+    ui.add_space(5.0);
+
     ui.strong("Author");
     ui.label("Who created this save file, not always the builder of the save.");
     ui.text_edit_singleline(&mut save_data.header1.author.name);
-    ui.strong("Description");
-    ui.add(TextEdit::multiline(&mut save_data.header1.description).desired_width(600.0));
+
+    ui.add_space(5.0);
+
     ui.strong("Brickcount");
     ui.add_enabled(false, DragValue::new(&mut save_data.header1.brick_count));
 }
@@ -185,6 +199,7 @@ fn show_preview(
     let mut ret = None;
     ui.add_space(15.0);
     gui::header(ui, "Preview");
+    ui.label("Brickadia stores preview images as PNG or JPEG images. If you select an image not in one of these formats it will convert it to PNG");
     ui.add_space(5.0);
     if gui::button(ui, "Choose Image...", true) {
         ret = Some(file_dialog::choose_preview());
