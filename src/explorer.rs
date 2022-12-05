@@ -11,7 +11,8 @@ use crate::EditorApp;
 
 impl EditorApp {
     pub fn show_explorer(&mut self, ui: &mut Ui, ctx: &Context) {
-        ui.label("EXPLORER");
+        ui.label("   EXPLORER");
+        ui.add_space(5.0);
         ui.visuals_mut().hyperlink_color = Color32::LIGHT_GRAY;
         ScrollArea::vertical().show(ui, |ui| {
             if let Some(folder_path) = &self.folder_path {
@@ -31,7 +32,7 @@ impl EditorApp {
             }
             gui::fill_horizontal(ui);
         });
-        gui::fill_horizontal(ui);
+        //gui::fill_horizontal(ui);
     }
 
     fn display_path(&self, path: &PathBuf, ui: &mut Ui, root: bool) -> Option<PathBuf> {
@@ -82,25 +83,27 @@ impl EditorApp {
     }
 
     fn display_file(&self, path: &PathBuf, ui: &mut Ui) -> Option<PathBuf> {
+        let mut ret = None;
         if let Some(filename) = path.file_name() {
             let filename = filename.to_string_lossy();
             if let Some(file_extension) = filename.rsplit_once(".") {
                 let file_extension = file_extension.1;
                 if file_extension == "brs" {
-                    let mut text = filename.to_string();
+                    let text = filename.to_string();
 
                     if let Some(cur_path) = &self.file_path {
                         if path == cur_path {
-                            text = format!("{} 🛠", text);
+                            ui.visuals_mut().hyperlink_color = Color32::YELLOW;
                         }
                     }
 
                     if ui.link(text).clicked() {
-                        return Some(path.to_path_buf());
+                        ret = Some(path.to_path_buf());
                     }
+                    ui.visuals_mut().hyperlink_color = Color32::LIGHT_GRAY;
                 }
             }
         }
-        None
+        ret
     }
 }

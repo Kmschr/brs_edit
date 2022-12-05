@@ -78,7 +78,7 @@ impl eframe::App for EditorApp {
     fn update(&mut self, ctx: &egui::Context, frame: &mut eframe::Frame) {
         input::handle_key_presses(ctx, frame);
         self.receive_file_dialog_paths(ctx);
-        TopBottomPanel::top("menu_panel").show(ctx, |ui| {
+        TopBottomPanel::top("menu_panel").frame(gui::TOP_FRAME).show(ctx, |ui| {
             self.show_menu(ui, frame);
         });
         TopBottomPanel::bottom("info_panel")
@@ -88,11 +88,12 @@ impl eframe::App for EditorApp {
             });
         SidePanel::left("file_panel")
             .resizable(true)
+            .frame(gui::LEFT_FRAME)
             .max_width(DEFAULT_WINDOW_SIZE.x / 2.0)
             .show(ctx, |ui| {
                 self.show_explorer(ui, ctx);
             });
-        CentralPanel::default().show(ctx, |ui| {
+        CentralPanel::default().frame(gui::CENTER_FRAME).show(ctx, |ui| {
             if self.file_path.is_none() {
                 self.starting_page(ui);
             } else if self.save_data.is_some() {
@@ -177,7 +178,7 @@ fn show_metadata(save_data: &mut SaveData, ui: &mut egui::Ui) {
         ui.add_enabled(false, DragValue::new(&mut save_data.version));
         ui.add_space(5.0);
         ui.strong("Game Version");
-        ui.label("Also known as \"Commit Level\" and corresponds to each change tracked by developers. Alpha 5 is currently using CL7870 as seen in the top right of the game.");
+        ui.label("Also known as \"Commit Level\" and corresponds to each change tracked by developers. Alpha 5 is currently using CL7870 as seen in the top right of the game. This field was introduced in BRS version 8");
         ui.add(DragValue::new(&mut save_data.game_version));
         ui.add_space(5.0);
     });
@@ -192,18 +193,18 @@ fn show_header_one(save_data: &mut SaveData, ui: &mut egui::Ui) {
             ui.add_space(5.0);
             ui.strong("Map");
             ui.label("Which game environment the save was generated in.");
-            ui.text_edit_singleline(&mut save_data.header1.map);
+            gui::text_edit_singleline(ui, &mut save_data.header1.map);
 
             ui.add_space(5.0);
 
             ui.strong("Description");
-            ui.add(TextEdit::multiline(&mut save_data.header1.description).desired_width(600.0));
+            gui::text_edit_multiline(ui, &mut save_data.header1.description);
 
             ui.add_space(5.0);
 
             ui.strong("Author");
             ui.label("Who created this save file, not always the builder of the save.");
-            ui.text_edit_singleline(&mut save_data.header1.author.name);
+            gui::text_edit_singleline(ui, &mut save_data.header1.author.name);
 
             ui.add_space(5.0);
 
@@ -224,7 +225,7 @@ fn show_header_two(save_data: &mut SaveData, ui: &mut egui::Ui) {
             ui.strong("Mods");
             ui.label("No longer used, but can be found in older saves");
             for mod_text in &mut save_data.header2.mods {
-                ui.text_edit_singleline(mod_text);
+                gui::text_edit_singleline(ui, mod_text);
             }
 
             ui.add_space(5.0);
