@@ -1,5 +1,6 @@
 use brickadia::read::SaveReader;
 use egui::Color32;
+use itertools::Itertools;
 use std::{fs::File, io::BufReader, path::PathBuf};
 
 use egui::{CollapsingHeader, Context, RichText, ScrollArea, Ui};
@@ -57,8 +58,19 @@ impl EditorApp {
                 .default_open(root)
                 .show(ui, |ui| {
                     if let Ok(dir_contents) = path.read_dir() {
-                        for entry in dir_contents.filter_map(|x| x.ok()) {
-                            let potential_path = self.display_path(&entry.path(), ui, false);
+                        for path in dir_contents
+                            .filter_map(|x| x.ok())
+                            .map(|x| x.path())
+                            .sorted_by(|a, b| {
+                                if a.is_dir() && b.is_file() {
+                                    return std::cmp::Ordering::Less;
+                                } else if a.is_file() && b.is_dir() {
+                                    return std::cmp::Ordering::Greater;
+                                }
+                                std::cmp::Ordering::Equal
+                            })
+                        {
+                            let potential_path = self.display_path(&path, ui, false);
                             if potential_path.is_some() {
                                 ret = potential_path;
                             }
