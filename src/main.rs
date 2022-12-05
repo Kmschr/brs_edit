@@ -15,6 +15,7 @@ use egui::*;
 use file_dialog::default_build_directory;
 use std::path::PathBuf;
 use std::sync::mpsc::Receiver;
+use num_format::{Locale, ToFormattedString};
 
 const DEFAULT_WINDOW_SIZE: Vec2 = Vec2::new(1280.0, 720.0);
 
@@ -209,7 +210,7 @@ fn show_header_one(save_data: &mut SaveData, ui: &mut egui::Ui) {
             ui.add_space(5.0);
 
             ui.strong("Brickcount");
-            ui.add_enabled(false, DragValue::new(&mut save_data.header1.brick_count));
+            ui.add_enabled(false, DragValue::new(&mut save_data.header1.brick_count).custom_formatter(|n, _| (n as i32).to_formatted_string(&Locale::en)).suffix(" bricks"));
             ui.add_space(5.0);
         });
 }
