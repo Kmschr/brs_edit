@@ -22,6 +22,15 @@ const MAX_PREVIEW_WIDTH: f32 = 640.0;
 const MAX_PREVIEW_HEIGHT: f32 = 360.0;
 const MAX_PREVIEW_ASPECT_RATIO: f32 = MAX_PREVIEW_WIDTH / MAX_PREVIEW_HEIGHT;
 
+// TODO:
+// - Be able to see which file is selected better (coloring)
+// - See if a file was modified
+// - Shortcuts for saving
+// - Render preview (GLOW) ?
+// - Import > BLS
+// - Import > OBJ
+// - Import > io (Bricklink Studio)
+
 fn main() {
     let native_options = eframe::NativeOptions {
         initial_window_size: Some(DEFAULT_WINDOW_SIZE),
@@ -141,8 +150,13 @@ impl EditorApp {
 
     fn save_page(&mut self, ui: &mut egui::Ui) {
         if let Some(save_data) = &mut self.save_data {
+            ui.visuals_mut().override_text_color = Some(Color32::WHITE);
+            if let Some(style) = ui.style_mut().text_styles.get_mut(&TextStyle::Button) {
+                style.size = 25.0;
+            }
             show_metadata(save_data, ui);
             show_header_one(save_data, ui);
+            show_header_two(save_data, ui);
             let new_preview_receiver = show_preview(&self.preview_handle, ui);
             if new_preview_receiver.is_some() {
                 self.preview_path_receiver = new_preview_receiver;
@@ -152,44 +166,69 @@ impl EditorApp {
 }
 
 fn show_metadata(save_data: &mut SaveData, ui: &mut egui::Ui) {
-    gui::header(ui, "Metadata");
-    ui.add_space(10.0);
-    ui.strong("BRS Version");
-    ui.label(
-        "The file format version used for this save. Alpha 5 uses version 10. Can not be changed.",
-    );
-    ui.add_enabled(false, DragValue::new(&mut save_data.version));
-    ui.add_space(5.0);
-    ui.strong("Game Version");
-    ui.label("Also known as \"Commit Level\" and corresponds to each change tracked by developers. Alpha 5 is currently using CL7870 as seen in the top right of the game.");
-    ui.add(DragValue::new(&mut save_data.game_version));
+    CollapsingHeader::new("Metadata").default_open(false).show(ui, |ui| {
+        ui.visuals_mut().override_text_color = None;
+
+        ui.add_space(10.0);
+        ui.strong("BRS Version");
+        ui.label(
+            "The file format version used for this save. Alpha 5 uses version 10. Can not be changed.",
+        );
+        ui.add_enabled(false, DragValue::new(&mut save_data.version));
+        ui.add_space(5.0);
+        ui.strong("Game Version");
+        ui.label("Also known as \"Commit Level\" and corresponds to each change tracked by developers. Alpha 5 is currently using CL7870 as seen in the top right of the game.");
+        ui.add(DragValue::new(&mut save_data.game_version));
+        ui.add_space(5.0);
+    });
 }
 
 fn show_header_one(save_data: &mut SaveData, ui: &mut egui::Ui) {
-    ui.add_space(15.0);
-    gui::header(ui, "Header1");
+    CollapsingHeader::new("Header1")
+        .default_open(true)
+        .show(ui, |ui| {
+            ui.visuals_mut().override_text_color = None;
 
-    ui.add_space(5.0);
+            ui.add_space(5.0);
+            ui.strong("Map");
+            ui.label("Which game environment the save was generated in.");
+            ui.text_edit_singleline(&mut save_data.header1.map);
 
-    ui.strong("Map");
-    ui.label("Which game environment the save was generated in.");
-    ui.text_edit_singleline(&mut save_data.header1.map);
+            ui.add_space(5.0);
 
-    ui.add_space(5.0);
+            ui.strong("Description");
+            ui.add(TextEdit::multiline(&mut save_data.header1.description).desired_width(600.0));
 
-    ui.strong("Description");
-    ui.add(TextEdit::multiline(&mut save_data.header1.description).desired_width(600.0));
+            ui.add_space(5.0);
 
-    ui.add_space(5.0);
+            ui.strong("Author");
+            ui.label("Who created this save file, not always the builder of the save.");
+            ui.text_edit_singleline(&mut save_data.header1.author.name);
 
-    ui.strong("Author");
-    ui.label("Who created this save file, not always the builder of the save.");
-    ui.text_edit_singleline(&mut save_data.header1.author.name);
+            ui.add_space(5.0);
 
-    ui.add_space(5.0);
+            ui.strong("Brickcount");
+            ui.add_enabled(false, DragValue::new(&mut save_data.header1.brick_count));
+            ui.add_space(5.0);
+        });
+}
 
-    ui.strong("Brickcount");
-    ui.add_enabled(false, DragValue::new(&mut save_data.header1.brick_count));
+fn show_header_two(save_data: &mut SaveData, ui: &mut egui::Ui) {
+    CollapsingHeader::new("Header2")
+        .default_open(false)
+        .show(ui, |ui| {
+            ui.visuals_mut().override_text_color = None;
+
+            ui.add_space(5.0);
+
+            ui.strong("Mods");
+            ui.label("No longer used, but can be found in older saves");
+            for mod_text in &mut save_data.header2.mods {
+                ui.text_edit_singleline(mod_text);
+            }
+
+            ui.add_space(5.0);
+        });
 }
 
 fn show_preview(
@@ -197,24 +236,36 @@ fn show_preview(
     ui: &mut egui::Ui,
 ) -> Option<Receiver<Option<PathBuf>>> {
     let mut ret = None;
-    ui.add_space(15.0);
-    gui::header(ui, "Preview");
-    ui.label("Brickadia stores preview images as PNG or JPEG images. If you select an image not in one of these formats it will convert it to PNG");
-    ui.add_space(5.0);
-    if gui::button(ui, "Choose Image...", true) {
-        ret = Some(file_dialog::choose_preview());
-    }
-    if let Some(texture) = preview {
-        let preview_size = texture.size_vec2();
-        ui.label(format!("{} x {}", preview_size.x, preview_size.y));
 
-        let display_size = contain_preview_size(preview_size);
-        Frame::none()
-            .shadow(epaint::Shadow::big_dark())
-            .show(ui, |ui| {
-                ui.image(texture, display_size);
-            });
-    }
+    CollapsingHeader::new("Preview")
+    .default_open(true)
+    .show(ui, |ui| {
+        ui.visuals_mut().override_text_color = None;
+        if let Some(style) = ui.style_mut().text_styles.get_mut(&TextStyle::Button) {
+            style.size = 15.0;
+        }
+
+        ui.add_space(5.0);
+        ui.label("Brickadia stores preview images as PNG or JPEG images. If you select an image not in one of these formats it will convert it to PNG");
+        ui.add_space(5.0);
+        if gui::button(ui, "Choose Image...", true) {
+            ret = Some(file_dialog::choose_preview());
+        }
+        if let Some(texture) = preview {
+            let preview_size = texture.size_vec2();
+            ui.label(format!("{} x {}", preview_size.x, preview_size.y));
+    
+            let display_size = contain_preview_size(preview_size);
+            Frame::none()
+                .shadow(epaint::Shadow::big_dark())
+                .show(ui, |ui| {
+                    ui.image(texture, display_size);
+                });
+        }
+
+        ui.add_space(5.0);
+    });
+
     ret
 }
 
