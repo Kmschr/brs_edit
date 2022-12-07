@@ -1,12 +1,10 @@
-use brickadia::read::SaveReader;
 use egui::Color32;
 use itertools::Itertools;
-use std::{fs::File, io::BufReader, path::PathBuf};
+use std::path::PathBuf;
 
 use egui::{CollapsingHeader, Context, RichText, ScrollArea, Ui};
 
 use crate::gui;
-use crate::open;
 use crate::EditorApp;
 
 const PREVIEW_HEIGHT: f32 = 100.0;
@@ -32,16 +30,7 @@ impl EditorApp {
             if let Some(folder_path) = &self.folder_path {
                 let path_to_load = self.display_path(&folder_path, ui, true);
                 if let Some(path) = path_to_load {
-                    if let Ok(file) = File::open(&path) {
-                        let reader = BufReader::new(file);
-                        if let Ok(mut save_reader) = SaveReader::new(reader) {
-                            if let Ok(save_data) = save_reader.read_all() {
-                                self.preview_handle = open::load_preview(&save_data, ctx);
-                                self.save_data = Some(save_data);
-                                self.file_path = Some(path);
-                            }
-                        }
-                    }
+                    self.open(&path, ctx);
                 }
             }
             gui::fill_horizontal(ui);

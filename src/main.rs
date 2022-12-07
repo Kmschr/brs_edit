@@ -8,6 +8,7 @@ mod menu;
 mod open;
 mod save;
 mod view;
+mod header2;
 
 use brickadia::save::SaveData;
 use eframe::egui;
@@ -16,6 +17,7 @@ use file_dialog::default_build_directory;
 use std::path::PathBuf;
 use std::sync::mpsc::Receiver;
 use num_format::{Locale, ToFormattedString};
+use header2::show_header_two;
 
 const DEFAULT_WINDOW_SIZE: Vec2 = Vec2::new(1280.0, 720.0);
 
@@ -56,6 +58,7 @@ struct EditorApp {
     folder_path_receiver: Option<Receiver<Option<PathBuf>>>,
     folder_path: Option<PathBuf>,
     save_data: Option<brickadia::save::SaveData>,
+    save_colors: Vec<([f32; 4], u32)>,
     preview_handle: Option<TextureHandle>,
     preview_path_receiver: Option<Receiver<Option<PathBuf>>>,
 }
@@ -69,6 +72,7 @@ impl EditorApp {
             folder_path_receiver: None,
             folder_path: None,
             save_data: None,
+            save_colors: vec![],
             preview_handle: None,
             preview_path_receiver: None,
         }
@@ -159,7 +163,7 @@ impl EditorApp {
             }
             show_metadata(save_data, ui);
             show_header_one(save_data, ui);
-            show_header_two(save_data, ui);
+            show_header_two(save_data, &mut self.save_colors, ui);
             let new_preview_receiver = show_preview(&self.preview_handle, ui);
             if new_preview_receiver.is_some() {
                 self.preview_path_receiver = new_preview_receiver;
@@ -218,47 +222,6 @@ fn show_header_one(save_data: &mut SaveData, ui: &mut egui::Ui) {
 
             ui.strong("Brickcount");
             ui.add_enabled(false, DragValue::new(&mut save_data.header1.brick_count).custom_formatter(|n, _| (n as i32).to_formatted_string(&Locale::en)).suffix(" bricks"));
-            ui.add_space(5.0);
-        });
-}
-
-fn show_header_two(save_data: &mut SaveData, ui: &mut egui::Ui) {
-    CollapsingHeader::new("Header2")
-        .default_open(true)
-        .show(ui, |ui| {
-            ui.visuals_mut().override_text_color = None;
-            if let Some(style) = ui.style_mut().text_styles.get_mut(&TextStyle::Button) {
-                style.size = 14.0;
-            }
-
-            ui.add_space(5.0);
-
-            ui.strong("Mods");
-            ui.label("No longer used, but can be found in older saves");
-
-            // save_data.header2.mods.retain_mut(|mod_text| {
-            //     ui.horizontal(|ui| {
-            //         gui::text_edit_singleline(ui, mod_text);
-            //         if ui.small_button("X").clicked() {
-            //             return false;
-            //         }
-            //     });
-            //     true
-            // });
-
-            for i in 0..save_data.header2.mods.len() {
-                let mods = &mut save_data.header2.mods;
-                ui.horizontal(|ui| {
-                    gui::text_edit_singleline(ui, &mut mods[i]);
-                    if ui.small_button("X").clicked() {
-                        mods.remove(i);
-                    }
-                });
-            }
-            if gui::button(ui, "Add Mod", true) {
-                save_data.header2.mods.push("".into());
-            }
-
             ui.add_space(5.0);
         });
 }
