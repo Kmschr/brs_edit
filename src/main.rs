@@ -24,9 +24,9 @@ const MAX_PREVIEW_HEIGHT: f32 = 360.0;
 const MAX_PREVIEW_ASPECT_RATIO: f32 = MAX_PREVIEW_WIDTH / MAX_PREVIEW_HEIGHT;
 
 // TODO:
-// - Be able to see which file is selected better (coloring)
 // - See if a file was modified
 // - Shortcuts for saving
+// - Save As
 // - Render preview (GLOW) ?
 // - Import > BLS
 // - Import > OBJ
@@ -77,10 +77,11 @@ impl EditorApp {
 
 impl eframe::App for EditorApp {
     fn update(&mut self, ctx: &egui::Context, frame: &mut eframe::Frame) {
-        input::handle_key_presses(ctx, frame);
+        self.handle_shortcuts(ctx, frame);
         self.receive_file_dialog_paths(ctx);
+
         TopBottomPanel::top("menu_panel").frame(gui::TOP_FRAME).show(ctx, |ui| {
-            self.show_menu(ui, frame);
+            self.show_menu(ui, ctx, frame);
         });
         TopBottomPanel::bottom("info_panel")
             .frame(gui::BOTTOM_FRAME)
@@ -168,7 +169,7 @@ impl EditorApp {
 }
 
 fn show_metadata(save_data: &mut SaveData, ui: &mut egui::Ui) {
-    CollapsingHeader::new("Metadata").default_open(false).show(ui, |ui| {
+    CollapsingHeader::new("Metadata").default_open(true).show(ui, |ui| {
         ui.visuals_mut().override_text_color = None;
 
         ui.add_space(10.0);
@@ -203,9 +204,15 @@ fn show_header_one(save_data: &mut SaveData, ui: &mut egui::Ui) {
 
             ui.add_space(5.0);
 
-            ui.strong("Author");
+            ui.strong("Author: Name");
             ui.label("Who created this save file, not always the builder of the save.");
             gui::text_edit_singleline(ui, &mut save_data.header1.author.name);
+
+            ui.add_space(5.0);
+
+            ui.strong("Author: ID");
+            ui.label("Player ID of who created this save file, not always the builder of the save.");
+            ui.code(save_data.header1.author.id.to_string());
 
             ui.add_space(5.0);
 
@@ -217,16 +224,39 @@ fn show_header_one(save_data: &mut SaveData, ui: &mut egui::Ui) {
 
 fn show_header_two(save_data: &mut SaveData, ui: &mut egui::Ui) {
     CollapsingHeader::new("Header2")
-        .default_open(false)
+        .default_open(true)
         .show(ui, |ui| {
             ui.visuals_mut().override_text_color = None;
+            if let Some(style) = ui.style_mut().text_styles.get_mut(&TextStyle::Button) {
+                style.size = 14.0;
+            }
 
             ui.add_space(5.0);
 
             ui.strong("Mods");
             ui.label("No longer used, but can be found in older saves");
-            for mod_text in &mut save_data.header2.mods {
-                gui::text_edit_singleline(ui, mod_text);
+
+            // save_data.header2.mods.retain_mut(|mod_text| {
+            //     ui.horizontal(|ui| {
+            //         gui::text_edit_singleline(ui, mod_text);
+            //         if ui.small_button("X").clicked() {
+            //             return false;
+            //         }
+            //     });
+            //     true
+            // });
+
+            for i in 0..save_data.header2.mods.len() {
+                let mods = &mut save_data.header2.mods;
+                ui.horizontal(|ui| {
+                    gui::text_edit_singleline(ui, &mut mods[i]);
+                    if ui.small_button("X").clicked() {
+                        mods.remove(i);
+                    }
+                });
+            }
+            if gui::button(ui, "Add Mod", true) {
+                save_data.header2.mods.push("".into());
             }
 
             ui.add_space(5.0);
@@ -244,7 +274,7 @@ fn show_preview(
     .show(ui, |ui| {
         ui.visuals_mut().override_text_color = None;
         if let Some(style) = ui.style_mut().text_styles.get_mut(&TextStyle::Button) {
-            style.size = 15.0;
+            style.size = 14.0;
         }
 
         ui.add_space(5.0);

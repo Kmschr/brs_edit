@@ -1,7 +1,5 @@
-use std::mem;
-
 impl crate::EditorApp {
-    pub fn show_menu(&mut self, ui: &mut egui::Ui, frame: &mut eframe::Frame) {
+    pub fn show_menu(&mut self, ui: &mut egui::Ui, ctx: &egui::Context, frame: &mut eframe::Frame) {
         egui::menu::bar(ui, |ui| {
             ui.menu_button("File", |ui| {
                 if ui.button("Open File...").clicked() {
@@ -12,14 +10,7 @@ impl crate::EditorApp {
                 }
                 ui.separator();
                 if ui.button("Save").clicked() {
-                    if let Some(file_path) = &self.file_path {
-                        if self.save_data.is_some() {
-                            let save_data = mem::take(&mut self.save_data);
-                            if let Some(save_data) = save_data {
-                                crate::save::save(file_path, save_data);
-                            }
-                        }
-                    }
+                    self.save(ctx);
                 }
                 if ui.button("Save As...").clicked() {}
                 ui.separator();

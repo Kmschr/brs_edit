@@ -65,7 +65,7 @@ pub const BOTTOM_FRAME: Frame = Frame {
 pub const LEFT_FRAME: Frame = Frame {
     inner_margin: Margin {
         left: 5.0,
-        right: 0.0,
+        right: 5.0,
         top: 5.0,
         bottom: 5.0,
     },

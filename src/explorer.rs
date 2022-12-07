@@ -9,8 +9,22 @@ use crate::gui;
 use crate::open;
 use crate::EditorApp;
 
+const PREVIEW_HEIGHT: f32 = 100.0;
+
 impl EditorApp {
     pub fn show_explorer(&mut self, ui: &mut Ui, ctx: &Context) {
+        if let Some(texture) = &self.preview_handle {
+            ui.vertical_centered(|ui| {
+                let preview_size = texture.size_vec2();
+                let preview_aspect_ratio = preview_size.x / preview_size.y;
+                ui.image(
+                    texture,
+                    [PREVIEW_HEIGHT * preview_aspect_ratio, PREVIEW_HEIGHT],
+                );
+            });
+            ui.separator();
+        }
+
         ui.label("   EXPLORER");
         ui.add_space(5.0);
         ui.visuals_mut().hyperlink_color = Color32::LIGHT_GRAY;
@@ -32,7 +46,6 @@ impl EditorApp {
             }
             gui::fill_horizontal(ui);
         });
-        //gui::fill_horizontal(ui);
     }
 
     fn display_path(&self, path: &PathBuf, ui: &mut Ui, root: bool) -> Option<PathBuf> {

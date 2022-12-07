@@ -1,7 +1,27 @@
-use std::io::Cursor;
+use std::{io::Cursor, path::PathBuf};
 
-use brickadia::save::{Preview, SaveData};
+use brickadia::{
+    read::SaveReader,
+    save::{Preview, SaveData},
+};
 use egui::{ColorImage, Context, TextureFilter, TextureHandle};
+
+use crate::EditorApp;
+
+impl EditorApp {
+    pub fn open(&mut self, file_path: &PathBuf, ctx: &egui::Context) {
+        if let Ok(file) = std::fs::File::open(&file_path) {
+            let reader = std::io::BufReader::new(file);
+            if let Ok(mut save_reader) = SaveReader::new(reader) {
+                if let Ok(save_data) = save_reader.read_all() {
+                    self.preview_handle = load_preview(&save_data, ctx);
+                    self.save_data = Some(save_data);
+                    self.file_path = Some(file_path.to_path_buf());
+                }
+            }
+        }
+    }
+}
 
 pub fn load_preview(save_data: &SaveData, ctx: &Context) -> Option<TextureHandle> {
     match &save_data.preview {

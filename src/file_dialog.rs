@@ -2,42 +2,42 @@ use std::env;
 use std::io::Cursor;
 use std::path::PathBuf;
 use std::sync::mpsc::Receiver;
-use std::{fs::File, io::BufReader, sync::mpsc, thread};
+use std::{sync::mpsc, thread};
 
 use crate::open;
 use crate::EditorApp;
-use brickadia::read::SaveReader;
 use brickadia::save::Preview;
 use egui::Context;
 use rfd::FileDialog;
 
 impl EditorApp {
     pub fn receive_file_dialog_paths(&mut self, ctx: &Context) {
+        self.receive_file_path(ctx);
+        self.receive_folder_path();
+        self.receive_preview_path(ctx);
+    }
+
+    fn receive_file_path(&mut self, ctx: &egui::Context) {
         if let Some(rx) = &self.file_path_receiver {
             if let Ok(data) = rx.try_recv() {
                 self.file_path_receiver = None;
                 if let Some(path) = data {
-                    if let Ok(file) = File::open(&path) {
-                        let reader = BufReader::new(file);
-                        if let Ok(mut save_reader) = SaveReader::new(reader) {
-                            if let Ok(save_data) = save_reader.read_all() {
-                                self.preview_handle = open::load_preview(&save_data, ctx);
-                                self.save_data = Some(save_data);
-                                self.file_path = Some(path);
-                            }
-                        }
-                    }
+                    self.open(&path, ctx);
                 }
             }
         }
+    }
 
+    fn receive_folder_path(&mut self) {
         if let Some(rx) = &self.folder_path_receiver {
             if let Ok(data) = rx.try_recv() {
                 self.folder_path_receiver = None;
                 self.folder_path = data;
             }
         }
+    }
 
+    fn receive_preview_path(&mut self, ctx: &egui::Context) {
         if let Some(rx) = &self.preview_path_receiver {
             if let Ok(data) = rx.try_recv() {
                 println!("Preview path receiver has data\n {:?}", data);
