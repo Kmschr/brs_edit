@@ -55,14 +55,30 @@ struct EditorApp {
     default_build_dir: Option<PathBuf>,
     default_documents_dir: Option<PathBuf>,
     default_downloads_dir: Option<PathBuf>,
-    file_path_receiver: Option<Receiver<Option<PathBuf>>>,
     file_path: Option<PathBuf>,
-    folder_path_receiver: Option<Receiver<Option<PathBuf>>>,
     folder_path: Option<PathBuf>,
+    receivers: Receivers,
     save_data: Option<brickadia::save::SaveData>,
     save_colors: Vec<([f32; 4], u32)>,
     preview_handle: Option<TextureHandle>,
+}
+
+struct Receivers {
+    file_path_receiver: Option<Receiver<Option<PathBuf>>>,
+    folder_path_receiver: Option<Receiver<Option<PathBuf>>>,
     preview_path_receiver: Option<Receiver<Option<PathBuf>>>,
+    save_as_path_receiever: Option<Receiver<Option<PathBuf>>>,
+}
+
+impl Receivers {
+    fn new() -> Self {
+        Self {
+            file_path_receiver: None,
+            folder_path_receiver: None,
+            preview_path_receiver: None,
+            save_as_path_receiever: None,
+        }
+    }
 }
 
 impl EditorApp {
@@ -151,14 +167,12 @@ impl EditorApp {
             default_build_dir: default_build_directory(),
             default_documents_dir: dirs::document_dir(),
             default_downloads_dir: dirs::download_dir(),
-            file_path_receiver: None,
             file_path: None,
-            folder_path_receiver: None,
             folder_path: None,
+            receivers: Receivers::new(),
             save_data: None,
             save_colors: vec![],
             preview_handle: None,
-            preview_path_receiver: None,
         }
     }
 }

@@ -15,12 +15,13 @@ impl EditorApp {
         self.receive_file_path(ctx);
         self.receive_folder_path();
         self.receive_preview_path(ctx);
+        self.receive_save_as_path();
     }
 
     fn receive_file_path(&mut self, ctx: &egui::Context) {
-        if let Some(rx) = &self.file_path_receiver {
+        if let Some(rx) = &self.receivers.file_path_receiver {
             if let Ok(data) = rx.try_recv() {
-                self.file_path_receiver = None;
+                self.receivers.file_path_receiver = None;
                 if let Some(path) = data {
                     self.open(&path, ctx);
                 }
@@ -29,19 +30,19 @@ impl EditorApp {
     }
 
     fn receive_folder_path(&mut self) {
-        if let Some(rx) = &self.folder_path_receiver {
+        if let Some(rx) = &self.receivers.folder_path_receiver {
             if let Ok(data) = rx.try_recv() {
-                self.folder_path_receiver = None;
+                self.receivers.folder_path_receiver = None;
                 self.folder_path = data;
             }
         }
     }
 
     fn receive_preview_path(&mut self, ctx: &egui::Context) {
-        if let Some(rx) = &self.preview_path_receiver {
+        if let Some(rx) = &self.receivers.preview_path_receiver {
             if let Ok(data) = rx.try_recv() {
                 println!("Preview path receiver has data\n {:?}", data);
-                self.preview_path_receiver = None;
+                self.receivers.preview_path_receiver = None;
                 if let Some(save_data) = &mut self.save_data {
                     if let Some(path) = data {
                         if let Ok(buffer) = std::fs::read(path) {
@@ -77,10 +78,21 @@ impl EditorApp {
         }
     }
 
+    fn receive_save_as_path(&mut self) {
+        if let Some(rx) = &self.receivers.save_as_path_receiever {
+            if let Ok(data) = rx.try_recv() {
+                self.receivers.save_as_path_receiever = None;
+                if let Some(file_path) = data {
+                    self.save_as(&file_path);
+                }
+            }
+        }
+    }
+
     pub fn choose_file(&mut self) {
-        if self.file_path_receiver.is_none() {
+        if self.receivers.file_path_receiver.is_none() {
             let (tx, rx) = mpsc::channel();
-            self.file_path_receiver = Some(rx);
+            self.receivers.file_path_receiver = Some(rx);
 
             thread::spawn(move || {
                 let file = FileDialog::new()
@@ -93,15 +105,30 @@ impl EditorApp {
     }
 
     pub fn choose_folder(&mut self) {
-        if self.folder_path_receiver.is_none() {
+        if self.receivers.folder_path_receiver.is_none() {
             let (tx, rx) = mpsc::channel();
-            self.folder_path_receiver = Some(rx);
+            self.receivers.folder_path_receiver = Some(rx);
 
             thread::spawn(move || {
                 let folder = FileDialog::new()
                     .set_directory("%USERPROFILE%/AppData")
                     .pick_folder();
                 tx.send(folder).unwrap();
+            });
+        }
+    }
+
+    pub fn choose_save_as(&mut self) {
+        if self.receivers.save_as_path_receiever.is_none() {
+            let (tx, rx) = mpsc::channel();
+            self.receivers.save_as_path_receiever = Some(rx);
+
+            thread::spawn(move || {
+                let file = FileDialog::new()
+                    .set_directory("%USERPROFILE%/AppData")
+                    .add_filter("Brickadia Savefile", &["brs"])
+                    .save_file();
+                tx.send(file).unwrap();
             });
         }
     }

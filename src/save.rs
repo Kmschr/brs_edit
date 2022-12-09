@@ -20,6 +20,16 @@ impl EditorApp {
             }
         }
     }
+
+    pub fn save_as(&mut self, file_path: &PathBuf) {
+        if self.save_data.is_some() {
+            let save_data = mem::take(&mut self.save_data);
+            if let Some(mut save_data) = save_data {
+                save_colors(&self.save_colors, &mut save_data.header2.colors);
+                save_to_path(file_path, save_data);
+            }
+        }
+    }
 }
 
 fn save_colors(egui_colors: &Vec<([f32; 4], u32)>, brs_colors: &mut Vec<Color>) {

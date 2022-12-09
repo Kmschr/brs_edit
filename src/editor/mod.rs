@@ -20,7 +20,7 @@ impl EditorApp {
             header2::ui(ui, &mut save_data.header2, &mut self.save_colors);
             let new_preview_receiver = preview::ui(ui, &self.preview_handle);
             if new_preview_receiver.is_some() {
-                self.preview_path_receiver = new_preview_receiver;
+                self.receivers.preview_path_receiver = new_preview_receiver;
             }
             bricks::ui(ui, &mut save_data.bricks);
         }
