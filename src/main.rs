@@ -9,8 +9,10 @@ mod open;
 mod save;
 mod view;
 mod header2;
+mod bricks;
 
 use brickadia::save::SaveData;
+use bricks::show_bricks;
 use eframe::egui;
 use egui::*;
 use file_dialog::default_build_directory;
@@ -97,7 +99,7 @@ impl eframe::App for EditorApp {
             .frame(gui::LEFT_FRAME)
             .max_width(DEFAULT_WINDOW_SIZE.x / 2.0)
             .show(ctx, |ui| {
-                self.show_explorer(ui, ctx);
+                self.explorer_ui(ui, ctx);
             });
         CentralPanel::default().frame(gui::CENTER_FRAME).show(ctx, |ui| {
             if self.file_path.is_none() {
@@ -163,11 +165,12 @@ impl EditorApp {
             }
             show_metadata(save_data, ui);
             show_header_one(save_data, ui);
-            show_header_two(save_data, &mut self.save_colors, ui);
+            show_header_two(&mut save_data.header2, &mut self.save_colors, ui);
             let new_preview_receiver = show_preview(&self.preview_handle, ui);
             if new_preview_receiver.is_some() {
                 self.preview_path_receiver = new_preview_receiver;
             }
+            show_bricks(&mut save_data.bricks, ui);
         }
     }
 }

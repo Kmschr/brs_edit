@@ -1,12 +1,12 @@
 use crate::gui;
-use brickadia::save::SaveData;
+use brickadia::save::Header2;
 use egui::*;
 use num_format::{Locale, ToFormattedString};
 
 const NUM_COLOR_COLUMNS: usize = 4;
 
 pub fn show_header_two(
-    save_data: &mut SaveData,
+    header2: &mut Header2,
     save_colors: &mut Vec<([f32; 4], u32)>,
     ui: &mut egui::Ui,
 ) {
@@ -19,58 +19,66 @@ pub fn show_header_two(
             }
 
             ui.add_space(5.0);
-            mods(save_data, ui);
+            string_list(
+                "Mods",
+                "No longer used, but can be found in older saves",
+                "Add Mod",
+                &mut header2.mods,
+                ui,
+            );
             ui.add_space(5.0);
-            brick_assets(save_data, ui);
+            string_list(
+                "Brick Assets",
+                "Messing with this can break the save, but you can do some useful things like change regular procedural bricks to micro bricks.",
+                "Add Brick Asset",
+                &mut header2.brick_assets,
+                ui,
+            );
             ui.add_space(5.0);
             colors(save_colors, ui);
             ui.add_space(5.0);
+            string_list(
+                "Materials",
+                "Messing with this can break the save, but you can do some funny things like replace all glass with hologram.",
+                "Add Material",
+                &mut header2.materials,
+                ui,
+            );
+            ui.add_space(5.0);
+            string_list(
+                "Physical Materials",
+                "Physical materials in the save",
+                "Add Physical Material",
+                &mut header2.physical_materials,
+                ui,
+            );
         });
 }
 
-fn mods(save_data: &mut SaveData, ui: &mut egui::Ui) {
-    CollapsingHeader::new("Mods").show(ui, |ui| {
-        ui.label("No longer used, but can be found in older saves");
+fn string_list(
+    header: &str,
+    label: &str,
+    button_label: &str,
+    list: &mut Vec<String>,
+    ui: &mut egui::Ui,
+) {
+    CollapsingHeader::new(header).show(ui, |ui| {
+        ui.label(label);
 
-        let mut delete_mod_index = None;
-        let mods = &mut save_data.header2.mods;
-        for i in 0..mods.len() {
+        let mut delete_index = None;
+        for i in 0..list.len() {
             ui.horizontal(|ui| {
-                gui::text_edit_singleline(ui, &mut mods[i]);
+                gui::text_edit_singleline(ui, &mut list[i]);
                 if ui.small_button("🗙").clicked() {
-                    delete_mod_index = Some(i);
+                    delete_index = Some(i);
                 }
             });
         }
-        if let Some(delete_mod_index) = delete_mod_index {
-            mods.remove(delete_mod_index);
+        if let Some(delete_index) = delete_index {
+            list.remove(delete_index);
         }
-        if gui::button(ui, "Add Mod", true) {
-            mods.push("".into());
-        }
-    });
-}
-
-fn brick_assets(save_data: &mut SaveData, ui: &mut egui::Ui) {
-    CollapsingHeader::new("Brick Assets").show(ui, |ui| {
-        ui.label("Messing with this can break the save, but you can do some useful things like change regular procedural bricks to micro bricks.");
-
-
-        let mut delete_brick_asset_index = None;
-        let brick_assets = &mut save_data.header2.brick_assets;
-        for i in 0..brick_assets.len() {
-            ui.horizontal(|ui| {
-                gui::text_edit_singleline(ui, &mut brick_assets[i]);
-                if ui.small_button("🗙").clicked() {
-                    delete_brick_asset_index = Some(i);
-                }
-            });
-        }
-        if let Some(delete_brick_asset_index) = delete_brick_asset_index {
-            brick_assets.remove(delete_brick_asset_index);
-        }
-        if gui::button(ui, "Add Brick Asset", true) {
-            brick_assets.push("".into());
+        if gui::button(ui, button_label, true) {
+            list.push("".into());
         }
     });
 }
@@ -105,23 +113,5 @@ fn colors(save_colors: &mut Vec<([f32; 4], u32)>, ui: &mut egui::Ui) {
                     ui.end_row();
                 }
             });
-
-        // for row in 0..(save_colors.len() / 10 + 1) {
-        //     ui.horizontal(|ui| {
-        //         for col in 0..10 {
-        //             let i = row * 10 + col;
-        //             if i >= save_colors.len() {
-        //                 break;
-        //             }
-        //             ui.color_edit_button_srgba(&mut save_colors[i]);
-        //         }
-        //     });
-        // }
-        // if let Some(delete_color_index) = delete_color_index {
-        //     save_colors.remove(delete_color_index);
-        // }
-        // if gui::button(ui, "Add Color", true) {
-        //     save_colors.push(Color32::from_rgba_premultiplied(255, 255, 255, 255));
-        // }
     });
 }
