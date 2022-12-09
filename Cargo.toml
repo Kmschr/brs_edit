@@ -8,7 +8,6 @@ edition = "2021"
 [dependencies]
 brickadia = "0.1"
 bytemuck = "1.12.3"
-device_query = "1.1.1"
 dirs = "4.0.0"
 eframe = { version="0.20.0", features=["wgpu"] }
 egui = { version="0.20.0", features=["bytemuck", "tracing"]}

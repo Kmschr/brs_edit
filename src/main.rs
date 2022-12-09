@@ -4,11 +4,11 @@ mod explorer;
 mod file_dialog;
 mod gui;
 mod icon;
-mod input;
 mod menu;
 mod open;
 mod render;
 mod save;
+mod shortcuts;
 mod view;
 
 use eframe::egui;
@@ -185,13 +185,13 @@ impl eframe::App for EditorApp {
             .show(ctx, |ui| {
                 self.explorer_ui(ui, ctx);
             });
-        SidePanel::right("render_panel")
-            .resizable(false)
-            .frame(gui::RIGHT_FRAME)
-            .max_width(DEFAULT_WINDOW_SIZE.x / 2.0)
-            .show(ctx, |ui| {
-                self.render_ui(ui);
-            });
+        // SidePanel::right("render_panel")
+        //     .resizable(false)
+        //     .frame(gui::RIGHT_FRAME)
+        //     .max_width(DEFAULT_WINDOW_SIZE.x / 2.0)
+        //     .show(ctx, |ui| {
+        //         self.render_ui(ui);
+        //     });
         CentralPanel::default()
             .frame(gui::CENTER_FRAME)
             .show(ctx, |ui| {
