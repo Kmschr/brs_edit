@@ -4,7 +4,7 @@ use brickadia::{
     read::SaveReader,
     save::{Brick, BrickColor, Color, Preview, SaveData},
 };
-use egui::{ColorImage, Context, TextureFilter, TextureHandle};
+use egui::{ColorImage, Context, TextureHandle, TextureOptions};
 
 use crate::EditorApp;
 
@@ -60,7 +60,7 @@ pub fn load_preview(save_data: &SaveData, ctx: &Context) -> Option<TextureHandle
                     let img_rgba8 = img.to_rgba8();
                     let img_pixels = img_rgba8.as_flat_samples();
                     let img = ColorImage::from_rgba_unmultiplied(img_size, img_pixels.as_slice());
-                    return Some(ctx.load_texture("Save-Preview", img, TextureFilter::Nearest));
+                    return Some(ctx.load_texture("Save-Preview", img, TextureOptions::NEAREST));
                 } else {
                     println!("Couldn't decode image")
                 }

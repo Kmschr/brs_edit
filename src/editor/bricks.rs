@@ -1,12 +1,15 @@
 use crate::gui;
 use brickadia::save::Brick;
-use egui::{CollapsingHeader, DragValue, Vec2};
-use egui_extras::{Size, StripBuilder, TableBuilder};
+use egui::{CollapsingHeader, DragValue, TextStyle, Vec2};
+use egui_extras::{Column, Size, StripBuilder, TableBuilder};
 
-pub fn show_bricks(bricks: &mut Vec<Brick>, ui: &mut egui::Ui) {
+pub fn ui(ui: &mut egui::Ui, bricks: &mut Vec<Brick>) {
     CollapsingHeader::new("Bricks")
         .default_open(true)
         .show(ui, |ui| {
+            if let Some(style) = ui.style_mut().text_styles.get_mut(&TextStyle::Button) {
+                style.size = 14.0;
+            }
             StripBuilder::new(ui)
                 .size(Size::remainder().at_least(500.0))
                 .vertical(|mut strip| {
@@ -22,11 +25,11 @@ pub fn show_bricks(bricks: &mut Vec<Brick>, ui: &mut egui::Ui) {
 fn table_ui(bricks: &mut Vec<Brick>, ui: &mut egui::Ui) {
     TableBuilder::new(ui)
         .striped(true)
-        .column(Size::exact(50.0))
-        .column(Size::exact(70.0))
-        .columns(Size::exact(100.0), 3)
-        .column(Size::exact(150.0))
-        .column(Size::exact(150.0))
+        .column(Column::exact(50.0))
+        .column(Column::exact(70.0))
+        .columns(Column::exact(100.0), 3)
+        .column(Column::exact(150.0))
+        .column(Column::exact(150.0))
         .header(14.0, |mut header| {
             header.col(|ui| {
                 ui.label("Brick #");

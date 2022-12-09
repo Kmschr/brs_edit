@@ -5,11 +5,7 @@ use num_format::{Locale, ToFormattedString};
 
 const NUM_COLOR_COLUMNS: usize = 4;
 
-pub fn show_header_two(
-    header2: &mut Header2,
-    save_colors: &mut Vec<([f32; 4], u32)>,
-    ui: &mut egui::Ui,
-) {
+pub fn ui(ui: &mut egui::Ui, header2: &mut Header2, save_colors: &mut Vec<([f32; 4], u32)>) {
     CollapsingHeader::new("Header2")
         .default_open(true)
         .show(ui, |ui| {
@@ -19,48 +15,48 @@ pub fn show_header_two(
             }
 
             ui.add_space(5.0);
-            string_list(
+            list_ui(ui,
                 "Mods",
                 "No longer used, but can be found in older saves",
                 "Add Mod",
                 &mut header2.mods,
-                ui,
+                
             );
             ui.add_space(5.0);
-            string_list(
+            list_ui(ui,
                 "Brick Assets",
                 "Messing with this can break the save, but you can do some useful things like change regular procedural bricks to micro bricks.",
                 "Add Brick Asset",
                 &mut header2.brick_assets,
-                ui,
+                
             );
             ui.add_space(5.0);
-            colors(save_colors, ui);
+            colors_ui(ui, save_colors);
             ui.add_space(5.0);
-            string_list(
+            list_ui(ui,
                 "Materials",
                 "Messing with this can break the save, but you can do some funny things like replace all glass with hologram.",
                 "Add Material",
                 &mut header2.materials,
-                ui,
+                
             );
             ui.add_space(5.0);
-            string_list(
+            list_ui(ui,
                 "Physical Materials",
                 "Physical materials in the save",
                 "Add Physical Material",
                 &mut header2.physical_materials,
-                ui,
+                
             );
         });
 }
 
-fn string_list(
+fn list_ui(
+    ui: &mut egui::Ui,
     header: &str,
     label: &str,
     button_label: &str,
     list: &mut Vec<String>,
-    ui: &mut egui::Ui,
 ) {
     CollapsingHeader::new(header).show(ui, |ui| {
         ui.label(label);
@@ -83,7 +79,7 @@ fn string_list(
     });
 }
 
-fn colors(save_colors: &mut Vec<([f32; 4], u32)>, ui: &mut egui::Ui) {
+fn colors_ui(ui: &mut egui::Ui, save_colors: &mut Vec<([f32; 4], u32)>) {
     CollapsingHeader::new("Color Palette").show(ui, |ui| {
         ui.label("Used by bricks with color indexes.");
 

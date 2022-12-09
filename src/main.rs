@@ -1,4 +1,5 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")] // hide console window on Windows in release
+mod editor;
 mod explorer;
 mod file_dialog;
 mod gui;
@@ -6,26 +7,21 @@ mod icon;
 mod input;
 mod menu;
 mod open;
+mod render;
 mod save;
 mod view;
-mod header2;
-mod bricks;
 
-use brickadia::save::SaveData;
-use bricks::show_bricks;
 use eframe::egui;
+use eframe::egui_wgpu::wgpu;
+use eframe::wgpu::util::DeviceExt;
 use egui::*;
 use file_dialog::default_build_directory;
+use render::TriangleRenderResources;
+use std::num::NonZeroU64;
 use std::path::PathBuf;
 use std::sync::mpsc::Receiver;
-use num_format::{Locale, ToFormattedString};
-use header2::show_header_two;
 
-const DEFAULT_WINDOW_SIZE: Vec2 = Vec2::new(1280.0, 720.0);
-
-const MAX_PREVIEW_WIDTH: f32 = 640.0;
-const MAX_PREVIEW_HEIGHT: f32 = 360.0;
-const MAX_PREVIEW_ASPECT_RATIO: f32 = MAX_PREVIEW_WIDTH / MAX_PREVIEW_HEIGHT;
+const DEFAULT_WINDOW_SIZE: Vec2 = Vec2::new(1920.0, 1080.0);
 
 // TODO:
 // - See if a file was modified
@@ -44,6 +40,7 @@ fn main() {
             width: 32,
             height: 32,
         }),
+        renderer: eframe::Renderer::Wgpu,
         ..Default::default()
     };
     eframe::run_native(
@@ -54,7 +51,10 @@ fn main() {
 }
 
 struct EditorApp {
+    angle: f32,
     default_build_dir: Option<PathBuf>,
+    default_documents_dir: Option<PathBuf>,
+    default_downloads_dir: Option<PathBuf>,
     file_path_receiver: Option<Receiver<Option<PathBuf>>>,
     file_path: Option<PathBuf>,
     folder_path_receiver: Option<Receiver<Option<PathBuf>>>,
@@ -66,9 +66,91 @@ struct EditorApp {
 }
 
 impl EditorApp {
-    fn new(_cc: &eframe::CreationContext) -> Self {
+    fn new(cc: &eframe::CreationContext) -> Self {
+        let wgpu_render_state = cc.wgpu_render_state.as_ref();
+
+        if let Some(wgpu_render_state) = wgpu_render_state {
+            let device = &wgpu_render_state.device;
+            let shader = device.create_shader_module(wgpu::ShaderModuleDescriptor {
+                label: Some("custom3d"),
+                source: wgpu::ShaderSource::Wgsl(
+                    include_str!("./custom3d_wgpu_shader.wgsl").into(),
+                ),
+            });
+
+            let bind_group_layout =
+                device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
+                    label: Some("custom3d"),
+                    entries: &[wgpu::BindGroupLayoutEntry {
+                        binding: 0,
+                        visibility: wgpu::ShaderStages::VERTEX,
+                        ty: wgpu::BindingType::Buffer {
+                            ty: wgpu::BufferBindingType::Uniform,
+                            has_dynamic_offset: false,
+                            min_binding_size: NonZeroU64::new(16),
+                        },
+                        count: None,
+                    }],
+                });
+
+            let pipeline_layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
+                label: Some("custom3d"),
+                bind_group_layouts: &[&bind_group_layout],
+                push_constant_ranges: &[],
+            });
+
+            let pipeline = device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
+                label: Some("custom3d"),
+                layout: Some(&pipeline_layout),
+                vertex: wgpu::VertexState {
+                    module: &shader,
+                    entry_point: "vs_main",
+                    buffers: &[],
+                },
+                fragment: Some(wgpu::FragmentState {
+                    module: &shader,
+                    entry_point: "fs_main",
+                    targets: &[Some(wgpu_render_state.target_format.into())],
+                }),
+                primitive: wgpu::PrimitiveState::default(),
+                depth_stencil: None,
+                multisample: wgpu::MultisampleState::default(),
+                multiview: None,
+            });
+
+            let uniform_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
+                label: Some("custom3d"),
+                contents: bytemuck::cast_slice(&[0.0_f32; 4]), // 16 bytes aligned!
+                // Mapping at creation (as done by the create_buffer_init utility) doesn't require us to to add the MAP_WRITE usage
+                // (this *happens* to workaround this bug )
+                usage: wgpu::BufferUsages::COPY_DST | wgpu::BufferUsages::UNIFORM,
+            });
+
+            let bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
+                label: Some("custom3d"),
+                layout: &bind_group_layout,
+                entries: &[wgpu::BindGroupEntry {
+                    binding: 0,
+                    resource: uniform_buffer.as_entire_binding(),
+                }],
+            });
+
+            wgpu_render_state
+                .renderer
+                .write()
+                .paint_callback_resources
+                .insert(TriangleRenderResources {
+                    pipeline,
+                    bind_group,
+                    uniform_buffer,
+                });
+        }
+
         Self {
+            angle: 0.0,
             default_build_dir: default_build_directory(),
+            default_documents_dir: dirs::document_dir(),
+            default_downloads_dir: dirs::download_dir(),
             file_path_receiver: None,
             file_path: None,
             folder_path_receiver: None,
@@ -86,9 +168,11 @@ impl eframe::App for EditorApp {
         self.handle_shortcuts(ctx, frame);
         self.receive_file_dialog_paths(ctx);
 
-        TopBottomPanel::top("menu_panel").frame(gui::TOP_FRAME).show(ctx, |ui| {
-            self.show_menu(ui, ctx, frame);
-        });
+        TopBottomPanel::top("menu_panel")
+            .frame(gui::TOP_FRAME)
+            .show(ctx, |ui| {
+                self.show_menu(ui, ctx, frame);
+            });
         TopBottomPanel::bottom("info_panel")
             .frame(gui::BOTTOM_FRAME)
             .show(ctx, |ui| {
@@ -101,16 +185,24 @@ impl eframe::App for EditorApp {
             .show(ctx, |ui| {
                 self.explorer_ui(ui, ctx);
             });
-        CentralPanel::default().frame(gui::CENTER_FRAME).show(ctx, |ui| {
-            if self.file_path.is_none() {
-                self.starting_page(ui);
-            } else if self.save_data.is_some() {
-                ScrollArea::vertical().stick_to_right(true).show(ui, |ui| {
-                    self.save_page(ui);
-                    gui::fill_horizontal(ui);
-                });
-            }
-        });
+        SidePanel::right("render_panel")
+            .resizable(false)
+            .frame(gui::RIGHT_FRAME)
+            .max_width(DEFAULT_WINDOW_SIZE.x / 2.0)
+            .show(ctx, |ui| {
+                self.render_ui(ui);
+            });
+        CentralPanel::default()
+            .frame(gui::CENTER_FRAME)
+            .show(ctx, |ui| {
+                if self.file_path.is_none() {
+                    self.starting_page(ui);
+                } else if self.save_data.is_some() {
+                    ScrollArea::vertical().stick_to_right(true).show(ui, |ui| {
+                        self.editor_ui(ui);
+                    });
+                }
+            });
     }
 }
 
@@ -152,130 +244,23 @@ impl EditorApp {
                 ui.strong(default_build_dir.to_string_lossy());
             });
         }
-
-        ui.label("Documents");
-        ui.label("Downloads");
-    }
-
-    fn save_page(&mut self, ui: &mut egui::Ui) {
-        if let Some(save_data) = &mut self.save_data {
-            ui.visuals_mut().override_text_color = Some(Color32::WHITE);
-            if let Some(style) = ui.style_mut().text_styles.get_mut(&TextStyle::Button) {
-                style.size = 25.0;
-            }
-            show_metadata(save_data, ui);
-            show_header_one(save_data, ui);
-            show_header_two(&mut save_data.header2, &mut self.save_colors, ui);
-            let new_preview_receiver = show_preview(&self.preview_handle, ui);
-            if new_preview_receiver.is_some() {
-                self.preview_path_receiver = new_preview_receiver;
-            }
-            show_bricks(&mut save_data.bricks, ui);
+        if let Some(default_documents_dir) = &self.default_documents_dir {
+            ui.horizontal(|ui| {
+                ui.spacing_mut().item_spacing.x = 10.0;
+                if ui.link("Documents").clicked() {
+                    self.folder_path = Some(default_documents_dir.clone());
+                };
+                ui.strong(default_documents_dir.to_string_lossy());
+            });
         }
-    }
-}
-
-fn show_metadata(save_data: &mut SaveData, ui: &mut egui::Ui) {
-    CollapsingHeader::new("Metadata").default_open(true).show(ui, |ui| {
-        ui.visuals_mut().override_text_color = None;
-
-        ui.add_space(10.0);
-        ui.strong("BRS Version");
-        ui.label(
-            "The file format version used for this save. Alpha 5 uses version 10. Can not be changed.",
-        );
-        ui.add_enabled(false, DragValue::new(&mut save_data.version));
-        ui.add_space(5.0);
-        ui.strong("Game Version");
-        ui.label("Also known as \"Commit Level\" and corresponds to each change tracked by developers. Alpha 5 is currently using CL7870 as seen in the top right of the game. This field was introduced in BRS version 8");
-        ui.add(DragValue::new(&mut save_data.game_version));
-        ui.add_space(5.0);
-    });
-}
-
-fn show_header_one(save_data: &mut SaveData, ui: &mut egui::Ui) {
-    CollapsingHeader::new("Header1")
-        .default_open(true)
-        .show(ui, |ui| {
-            ui.visuals_mut().override_text_color = None;
-
-            ui.add_space(5.0);
-            ui.strong("Map");
-            ui.label("Which game environment the save was generated in.");
-            gui::text_edit_singleline(ui, &mut save_data.header1.map);
-
-            ui.add_space(5.0);
-
-            ui.strong("Description");
-            gui::text_edit_multiline(ui, &mut save_data.header1.description);
-
-            ui.add_space(5.0);
-
-            ui.strong("Author: Name");
-            ui.label("Who created this save file, not always the builder of the save.");
-            gui::text_edit_singleline(ui, &mut save_data.header1.author.name);
-
-            ui.add_space(5.0);
-
-            ui.strong("Author: ID");
-            ui.label("Player ID of who created this save file, not always the builder of the save.");
-            ui.code(save_data.header1.author.id.to_string());
-
-            ui.add_space(5.0);
-
-            ui.strong("Brickcount");
-            ui.add_enabled(false, DragValue::new(&mut save_data.header1.brick_count).custom_formatter(|n, _| (n as i32).to_formatted_string(&Locale::en)).suffix(" bricks"));
-            ui.add_space(5.0);
-        });
-}
-
-fn show_preview(
-    preview: &Option<TextureHandle>,
-    ui: &mut egui::Ui,
-) -> Option<Receiver<Option<PathBuf>>> {
-    let mut ret = None;
-
-    CollapsingHeader::new("Preview")
-    .default_open(true)
-    .show(ui, |ui| {
-        ui.visuals_mut().override_text_color = None;
-        if let Some(style) = ui.style_mut().text_styles.get_mut(&TextStyle::Button) {
-            style.size = 14.0;
+        if let Some(default_downloads_dir) = &self.default_downloads_dir {
+            ui.horizontal(|ui| {
+                ui.spacing_mut().item_spacing.x = 10.0;
+                if ui.link("Downloads").clicked() {
+                    self.folder_path = Some(default_downloads_dir.clone());
+                };
+                ui.strong(default_downloads_dir.to_string_lossy());
+            });
         }
-
-        ui.add_space(5.0);
-        ui.label("Brickadia stores preview images as PNG or JPEG images. If you select an image not in one of these formats it will convert it to PNG");
-        ui.add_space(5.0);
-        if gui::button(ui, "Choose Image...", true) {
-            ret = Some(file_dialog::choose_preview());
-        }
-        if let Some(texture) = preview {
-            let preview_size = texture.size_vec2();
-            ui.label(format!("{} x {}", preview_size.x, preview_size.y));
-    
-            let display_size = contain_preview_size(preview_size);
-            Frame::none()
-                .shadow(epaint::Shadow::big_dark())
-                .show(ui, |ui| {
-                    ui.image(texture, display_size);
-                });
-        }
-
-        ui.add_space(5.0);
-    });
-
-    ret
-}
-
-fn contain_preview_size(preview_size: Vec2) -> Vec2 {
-    let preview_aspect_ratio = preview_size.x / preview_size.y;
-    if preview_aspect_ratio > MAX_PREVIEW_ASPECT_RATIO {
-        [
-            MAX_PREVIEW_HEIGHT * preview_aspect_ratio,
-            MAX_PREVIEW_HEIGHT,
-        ]
-        .into()
-    } else {
-        [MAX_PREVIEW_WIDTH, MAX_PREVIEW_WIDTH / preview_aspect_ratio].into()
     }
 }

@@ -92,6 +92,36 @@ pub const LEFT_FRAME: Frame = Frame {
     },
 };
 
+pub const RIGHT_FRAME: Frame = Frame {
+    inner_margin: Margin {
+        left: 0.0,
+        right: 0.0,
+        top: 0.0,
+        bottom: 0.0,
+    },
+    outer_margin: Margin {
+        left: 0.0,
+        right: 0.0,
+        top: 0.0,
+        bottom: 0.0,
+    },
+    fill: LEFT_PANEL_BG,
+    rounding: Rounding {
+        ne: 0.0,
+        nw: 0.0,
+        se: 0.0,
+        sw: 0.0,
+    },
+    shadow: eframe::epaint::Shadow {
+        extrusion: 0.0,
+        color: Color32::WHITE,
+    },
+    stroke: Stroke {
+        width: 0.0,
+        color: Color32::WHITE,
+    },
+};
+
 pub const CENTER_FRAME: Frame = Frame {
     inner_margin: Margin {
         left: 40.0,
