@@ -1,4 +1,4 @@
-#![cfg_attr(not(debug_assertions), windows_subsystem = "windows")] // hide console window on Windows in release
+// #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")] // hide console window on Windows in release
 mod editor;
 mod explorer;
 mod file_dialog;
@@ -14,6 +14,7 @@ mod view;
 use eframe::egui;
 use eframe::egui_wgpu::wgpu;
 use eframe::wgpu::util::DeviceExt;
+use eframe::wgpu::RequestAdapterOptions;
 use egui::*;
 use file_dialog::default_build_directory;
 use render::TriangleRenderResources;
@@ -33,6 +34,7 @@ const DEFAULT_WINDOW_SIZE: Vec2 = Vec2::new(1920.0, 1080.0);
 // - Import > io (Bricklink Studio)
 
 fn main() {
+    env_logger::init();
     let native_options = eframe::NativeOptions {
         initial_window_size: Some(DEFAULT_WINDOW_SIZE),
         icon_data: Some(eframe::IconData {
@@ -52,6 +54,7 @@ fn main() {
 
 struct EditorApp {
     angle: f32,
+    wgpu_backend: wgpu::Backend,
     default_build_dir: Option<PathBuf>,
     default_documents_dir: Option<PathBuf>,
     default_downloads_dir: Option<PathBuf>,
@@ -63,6 +66,7 @@ struct EditorApp {
     preview_handle: Option<TextureHandle>,
 }
 
+// use channels to get paths back from the native file dialog in another thread
 struct Receivers {
     file_path_receiver: Option<Receiver<Option<PathBuf>>>,
     folder_path_receiver: Option<Receiver<Option<PathBuf>>>,
@@ -83,10 +87,26 @@ impl Receivers {
 
 impl EditorApp {
     fn new(cc: &eframe::CreationContext) -> Self {
+        let test_adapter = pollster::block_on(
+            wgpu::Instance::new(wgpu::Backends::PRIMARY).request_adapter(&RequestAdapterOptions {
+                power_preference: wgpu::PowerPreference::HighPerformance,
+                force_fallback_adapter: false,
+                compatible_surface: None,
+            }),
+        )
+        .unwrap();
+
+        let test_backend = test_adapter.get_info().backend;
+
+        println!("{:?}", test_backend);
+
         let wgpu_render_state = cc.wgpu_render_state.as_ref();
 
         if let Some(wgpu_render_state) = wgpu_render_state {
             let device = &wgpu_render_state.device;
+
+            println!("{}", device.limits().max_buffer_size);
+
             let shader = device.create_shader_module(wgpu::ShaderModuleDescriptor {
                 label: Some("custom3d"),
                 source: wgpu::ShaderSource::Wgsl(
@@ -164,6 +184,7 @@ impl EditorApp {
 
         Self {
             angle: 0.0,
+            wgpu_backend: test_backend,
             default_build_dir: default_build_directory(),
             default_documents_dir: dirs::document_dir(),
             default_downloads_dir: dirs::download_dir(),
@@ -199,13 +220,13 @@ impl eframe::App for EditorApp {
             .show(ctx, |ui| {
                 self.explorer_ui(ui, ctx);
             });
-        // SidePanel::right("render_panel")
-        //     .resizable(false)
-        //     .frame(gui::RIGHT_FRAME)
-        //     .max_width(DEFAULT_WINDOW_SIZE.x / 2.0)
-        //     .show(ctx, |ui| {
-        //         self.render_ui(ui);
-        //     });
+        SidePanel::right("render_panel")
+            .resizable(false)
+            .frame(gui::RIGHT_FRAME)
+            .max_width(DEFAULT_WINDOW_SIZE.x / 2.0)
+            .show(ctx, |ui| {
+                self.render_ui(ui);
+            });
         CentralPanel::default()
             .frame(gui::CENTER_FRAME)
             .show(ctx, |ui| {
@@ -231,6 +252,7 @@ impl EditorApp {
                 let icon = RichText::new("\u{e624}").strong();
                 ui.visuals_mut().hyperlink_color = Color32::WHITE;
                 ui.hyperlink_to(icon, "https://github.com/Kmschr/brs_edit");
+                ui.colored_label(Color32::WHITE, format!("{:?}", self.wgpu_backend));
             });
         });
     }
