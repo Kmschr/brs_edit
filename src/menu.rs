@@ -5,9 +5,11 @@ impl crate::EditorApp {
     pub fn show_menu(&mut self, ui: &mut egui::Ui, ctx: &egui::Context, frame: &mut eframe::Frame) {
         egui::menu::bar(ui, |ui| {
             self.file_menu_ui(ui, ctx);
-            ui.menu_button("Edit", |ui| if ui.button("Open").clicked() {});
+            ui.menu_button("Edit", |ui| if ui.button("Delete Bricks").clicked() {
+                self.show_delete_window = true;
+            });
             view_menu_ui(ui, ctx, frame);
-            ui.menu_button("Help", |ui| if ui.button("About").clicked() {});
+            ui.menu_button("Help", |ui| if ui.button("About").clicked() { });
         });
     }
 
@@ -20,21 +22,17 @@ impl crate::EditorApp {
                 self.choose_folder();
             }
             ui.separator();
-
-            let save_button =
-                Button::new("Save").shortcut_text(ctx.format_shortcut(&shortcuts::SAVE_SHORTCUT));
+            let save_button = Button::new("Save").shortcut_text(ctx.format_shortcut(&shortcuts::SAVE_SHORTCUT));
             if ui.add(save_button).clicked() {
                 self.save(ctx);
             }
-
-            let save_as_button = Button::new("Save As...")
-                .shortcut_text(ctx.format_shortcut(&shortcuts::SAVE_AS_SHORTCUT));
+            let save_as_button =
+                Button::new("Save As...").shortcut_text(ctx.format_shortcut(&shortcuts::SAVE_AS_SHORTCUT));
             if ui.add(save_as_button).clicked() {
                 self.choose_save_as();
             }
-
             ui.separator();
-            if ui.button("Import").clicked() {}
+            if ui.button("Import").clicked() { }
             ui.separator();
             if ui.button("Exit").clicked() {
                 std::process::exit(0);
@@ -45,8 +43,8 @@ impl crate::EditorApp {
 
 fn view_menu_ui(ui: &mut egui::Ui, ctx: &egui::Context, frame: &mut eframe::Frame) {
     ui.menu_button("View", |ui| {
-        let fullscreen_button = Button::new("Full Screen")
-            .shortcut_text(ctx.format_shortcut(&shortcuts::FULLSCREEN_SHORTCUT));
+        let fullscreen_button =
+            Button::new("Full Screen").shortcut_text(ctx.format_shortcut(&shortcuts::FULLSCREEN_SHORTCUT));
         if ui.add(fullscreen_button).clicked() {
             crate::view::toggle_fullscreen(frame);
         }

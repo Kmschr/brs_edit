@@ -1,11 +1,23 @@
-use std::{io::Cursor, path::PathBuf};
-
+use std::{
+    io::Cursor,
+    path::PathBuf,
+};
 use brickadia::{
     read::SaveReader,
-    save::{Brick, BrickColor, Color, Preview, SaveData},
+    save::{
+        Brick,
+        BrickColor,
+        Color,
+        Preview,
+        SaveData,
+    },
 };
-use egui::{ColorImage, Context, TextureHandle, TextureOptions};
-
+use egui::{
+    ColorImage,
+    Context,
+    TextureHandle,
+    TextureOptions,
+};
 use crate::EditorApp;
 
 impl EditorApp {
@@ -28,15 +40,17 @@ impl EditorApp {
 pub fn load_colors(egui_colors: &mut Vec<([f32; 4], u32)>, brs_colors: &Vec<Color>) {
     egui_colors.clear();
     for brs_color in brs_colors {
-        egui_colors.push((
-            [
-                (brs_color.r as f32 / 255.0),
-                (brs_color.g as f32 / 255.0),
-                (brs_color.b as f32 / 255.0),
-                (brs_color.a as f32 / 255.0),
-            ],
-            0,
-        ));
+        egui_colors.push(
+            (
+                [
+                    (brs_color.r as f32 / 255.0),
+                    (brs_color.g as f32 / 255.0),
+                    (brs_color.b as f32 / 255.0),
+                    (brs_color.a as f32 / 255.0),
+                ],
+                0,
+            ),
+        );
     }
 }
 
@@ -45,8 +59,8 @@ pub fn count_colors(egui_colors: &mut Vec<([f32; 4], u32)>, bricks: &Vec<Brick>)
         match brick.color {
             BrickColor::Index(i) => {
                 egui_colors[i as usize].1 += 1;
-            }
-            _ => {}
+            },
+            _ => { },
         }
     }
 }
@@ -67,13 +81,13 @@ pub fn load_preview(save_data: &SaveData, ctx: &Context) -> Option<TextureHandle
             } else {
                 println!("Couldn't interpret preview data")
             }
-        }
+        },
         Preview::None => {
             println!("No preview image to load")
-        }
+        },
         _ => {
             println!("Preview image in unknown format")
-        }
+        },
     }
     None
 }
