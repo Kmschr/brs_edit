@@ -1,5 +1,8 @@
-use egui::{Key, KeyboardShortcut, Modifiers};
-
+use egui::{
+    Key,
+    KeyboardShortcut,
+    Modifiers,
+};
 use crate::EditorApp;
 
 pub const SAVE_SHORTCUT: KeyboardShortcut = KeyboardShortcut {
@@ -12,7 +15,6 @@ pub const SAVE_SHORTCUT: KeyboardShortcut = KeyboardShortcut {
     },
     key: Key::S,
 };
-
 pub const SAVE_AS_SHORTCUT: KeyboardShortcut = KeyboardShortcut {
     modifiers: Modifiers {
         alt: false,
@@ -23,7 +25,6 @@ pub const SAVE_AS_SHORTCUT: KeyboardShortcut = KeyboardShortcut {
     },
     key: Key::S,
 };
-
 pub const FULLSCREEN_SHORTCUT: KeyboardShortcut = KeyboardShortcut {
     modifiers: Modifiers {
         alt: false,
@@ -33,6 +34,16 @@ pub const FULLSCREEN_SHORTCUT: KeyboardShortcut = KeyboardShortcut {
         command: false,
     },
     key: Key::F11,
+};
+pub const NEW_FILE_SHORTCUT: KeyboardShortcut = KeyboardShortcut {
+    modifiers: Modifiers {
+        alt: false,
+        ctrl: false,
+        shift: false,
+        mac_cmd: false,
+        command: true,
+    },
+    key: Key::N,
 };
 
 impl EditorApp {

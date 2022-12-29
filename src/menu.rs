@@ -1,11 +1,12 @@
 use crate::shortcuts;
+use brickadia::save::SaveData;
 use egui::Button;
 
 impl crate::EditorApp {
     pub fn show_menu(&mut self, ui: &mut egui::Ui, ctx: &egui::Context, frame: &mut eframe::Frame) {
         egui::menu::bar(ui, |ui| {
             self.file_menu_ui(ui, ctx);
-            ui.menu_button("Edit", |ui| if ui.button("Delete Bricks").clicked() {
+            ui.menu_button("Edit", |ui| if ui.button("Delete Bricks By...").clicked() {
                 self.show_delete_window = true;
             });
             view_menu_ui(ui, ctx, frame);
@@ -15,6 +16,13 @@ impl crate::EditorApp {
 
     fn file_menu_ui(&mut self, ui: &mut egui::Ui, ctx: &egui::Context) {
         ui.menu_button("File", |ui| {
+            let new_file_button =
+                Button::new("New File...").shortcut_text(ctx.format_shortcut(&shortcuts::NEW_FILE_SHORTCUT));
+            if ui.add(new_file_button).clicked() {
+                self.file_path = None;
+                self.save_data = Some(SaveData::default());
+            }
+            ui.separator();
             if ui.button("Open File...").clicked() {
                 self.choose_file();
             }

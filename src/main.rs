@@ -1,5 +1,6 @@
 // #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")] // hide
 // console window on Windows in release
+mod delete;
 mod editor;
 mod explorer;
 mod file_dialog;
@@ -18,11 +19,6 @@ use eframe::wgpu::util::DeviceExt;
 use eframe::wgpu::RequestAdapterOptions;
 use egui::*;
 use file_dialog::default_build_directory;
-use itertools::Itertools;
-use num_format::{
-    ToFormattedString,
-    Locale,
-};
 use render::TriangleRenderResources;
 use std::num::NonZeroU64;
 use std::path::PathBuf;
@@ -208,7 +204,7 @@ impl eframe::App for EditorApp {
         // SidePanel::right("render_panel") .resizable(false) .frame(gui::RIGHT_FRAME)
         // .max_width(DEFAULT_WINDOW_SIZE.x / 2.0) .show(ctx, |ui| { self.render_ui(ui); });
         CentralPanel::default().frame(gui::CENTER_FRAME).show(ctx, |ui| {
-            if self.file_path.is_none() {
+            if self.file_path.is_none() && self.save_data.is_none() {
                 self.starting_page(ui);
             } else if self.save_data.is_some() {
                 ScrollArea::vertical().stick_to_right(true).show(ui, |ui| {
@@ -216,40 +212,7 @@ impl eframe::App for EditorApp {
                 });
             }
             if self.show_delete_window {
-                let mut colors: Vec<(usize, [f32; 4], u32)> =
-                    self.save_colors.iter().enumerate().map(|(i, brick)| (i, brick.0, brick.1)).filter(|color| {
-                        color.2 > 0
-                    }).sorted_by_key(|color| -(color.2 as i32)).collect();
-                Window::new("Delete Bricks").open(&mut self.show_delete_window).show(ctx, |ui| {
-                    egui::Grid::new("color grid").striped(true).min_col_width(150.0).show(ui, |ui| {
-                        for row in 0 .. (colors.len() / 4 + 1) {
-                            for col in 0 .. 4 {
-                                let i = row * 4 + col;
-                                if i >= colors.len() {
-                                    break;
-                                }
-                                let (i, color, bricks) = &mut colors[i];
-                                ui.horizontal(|ui| {
-                                    ui.color_edit_button_rgba_premultiplied(color);
-                                    ui.add_enabled(false, DragValue::new(bricks).custom_formatter(|n, _| {
-                                        (n as i32).to_formatted_string(&Locale::en)
-                                    }).suffix(" bricks"));
-                                    if ui.small_button("🗑").clicked() {
-                                        if let Some(save_data) = &mut self.save_data {
-                                            save_data.bricks.retain(|brick| match brick.color {
-                                                brickadia::save::BrickColor::Index(n) => n != *i as u32,
-                                                brickadia::save::BrickColor::Unique(_) => true,
-                                            });
-                                            open::load_colors(&mut self.save_colors, &save_data.header2.colors);
-                                            open::count_colors(&mut self.save_colors, &save_data.bricks);
-                                        }
-                                    }
-                                });
-                            }
-                            ui.end_row();
-                        }
-                    });
-                });
+                self.delete_ui(ctx);
             }
         });
     }
