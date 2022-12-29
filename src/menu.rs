@@ -32,7 +32,11 @@ impl crate::EditorApp {
             ui.separator();
             let save_button = Button::new("Save").shortcut_text(ctx.format_shortcut(&shortcuts::SAVE_SHORTCUT));
             if ui.add(save_button).clicked() {
-                self.save(ctx);
+                if self.file_path.is_some() {
+                    self.save();
+                } else {
+                    self.choose_save_as();
+                }
             }
             let save_as_button =
                 Button::new("Save As...").shortcut_text(ctx.format_shortcut(&shortcuts::SAVE_AS_SHORTCUT));
@@ -40,7 +44,16 @@ impl crate::EditorApp {
                 self.choose_save_as();
             }
             ui.separator();
-            if ui.button("Import").clicked() { }
+            ui.menu_button("Import", |ui| {
+                if ui.button("Blockland Save (.BLS)").clicked() { }
+                if ui.button("Wavefront (.OBJ)").clicked() { }
+                if ui.button("Heightmap").clicked() { }
+            });
+            ui.menu_button("Export", |ui| {
+                if ui.button("Preview Image").clicked() {
+                    self.choose_export_preview();
+                }
+            });
             ui.separator();
             if ui.button("Exit").clicked() {
                 std::process::exit(0);

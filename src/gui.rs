@@ -31,7 +31,6 @@ pub const TOP_FRAME: Frame = Frame {
         color: Color32::WHITE,
     },
 };
-
 pub const BOTTOM_FRAME: Frame = Frame {
     inner_margin: Margin {
         left: 5.0,
@@ -61,7 +60,6 @@ pub const BOTTOM_FRAME: Frame = Frame {
         color: Color32::WHITE,
     },
 };
-
 pub const LEFT_FRAME: Frame = Frame {
     inner_margin: Margin {
         left: 5.0,
@@ -91,8 +89,7 @@ pub const LEFT_FRAME: Frame = Frame {
         color: Color32::WHITE,
     },
 };
-
-pub const RIGHT_FRAME: Frame = Frame {
+pub const _RIGHT_FRAME: Frame = Frame {
     inner_margin: Margin {
         left: 0.0,
         right: 0.0,
@@ -121,7 +118,6 @@ pub const RIGHT_FRAME: Frame = Frame {
         color: Color32::WHITE,
     },
 };
-
 pub const CENTER_FRAME: Frame = Frame {
     inner_margin: Margin {
         left: 40.0,
@@ -151,7 +147,6 @@ pub const CENTER_FRAME: Frame = Frame {
         color: Color32::WHITE,
     },
 };
-
 pub const BLUE: Color32 = Color32::from_rgb(0, 122, 204);
 pub const CENTER_PANEL_BG: Color32 = Color32::from_rgb(30, 30, 30);
 pub const LEFT_PANEL_BG: Color32 = Color32::from_rgb(37, 37, 37);
@@ -175,8 +170,7 @@ pub fn fill_horizontal(ui: &mut Ui) {
 
 pub fn text_edit_singleline<S>(ui: &mut Ui, text: &mut S)
 where
-    S: widgets::text_edit::TextBuffer,
-{
+    S: widgets::text_edit::TextBuffer {
     ui.visuals_mut().extreme_bg_color = TEXT_EDIT_BG;
     ui.visuals_mut().override_text_color = Some(Color32::WHITE);
     ui.text_edit_singleline(text);
@@ -185,8 +179,7 @@ where
 
 pub fn text_edit_multiline<S>(ui: &mut Ui, text: &mut S)
 where
-    S: widgets::text_edit::TextBuffer,
-{
+    S: widgets::text_edit::TextBuffer {
     ui.visuals_mut().extreme_bg_color = TEXT_EDIT_BG;
     ui.visuals_mut().override_text_color = Some(Color32::WHITE);
     ui.add(TextEdit::multiline(text).desired_width(600.0));

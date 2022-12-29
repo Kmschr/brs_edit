@@ -55,7 +55,7 @@ impl EditorApp {
             crate::view::toggle_fullscreen(frame);
         }
         if ctx.input_mut().consume_shortcut(&SAVE_SHORTCUT) {
-            self.save(ctx);
+            self.save();
         }
         if ctx.input_mut().consume_shortcut(&SAVE_AS_SHORTCUT) {
             self.choose_save_as();

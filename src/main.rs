@@ -3,6 +3,7 @@
 mod delete;
 mod editor;
 mod explorer;
+mod export;
 mod file_dialog;
 mod gui;
 mod icon;
@@ -57,7 +58,7 @@ fn main() {
 }
 
 struct EditorApp {
-    angle: f32,
+    _angle: f32,
     wgpu_backend: wgpu::Backend,
     default_build_dir: Option<PathBuf>,
     default_documents_dir: Option<PathBuf>,
@@ -73,10 +74,16 @@ struct EditorApp {
 
 // use channels to get paths back from the native file dialog in another thread
 struct Receivers {
+    // Open File
     file_path_receiver: Option<Receiver<Option<PathBuf>>>,
+    // Open Folder
     folder_path_receiver: Option<Receiver<Option<PathBuf>>>,
+    // Choose Image...
     preview_path_receiver: Option<Receiver<Option<PathBuf>>>,
+    // Save As...
     save_as_path_receiever: Option<Receiver<Option<PathBuf>>>,
+    // Export > Preview
+    save_preview_path_receiver: Option<Receiver<Option<PathBuf>>>,
 }
 
 impl Receivers {
@@ -86,6 +93,7 @@ impl Receivers {
             folder_path_receiver: None,
             preview_path_receiver: None,
             save_as_path_receiever: None,
+            save_preview_path_receiver: None,
         }
     }
 }
@@ -167,7 +175,7 @@ impl EditorApp {
             });
         }
         Self {
-            angle: 0.0,
+            _angle: 0.0,
             wgpu_backend: test_backend,
             default_build_dir: default_build_directory(),
             default_documents_dir: dirs::document_dir(),
