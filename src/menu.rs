@@ -7,8 +7,12 @@ impl crate::EditorApp {
         egui::menu::bar(ui, |ui| {
             self.file_menu_ui(ui, ctx);
             ui.menu_button("Edit", |ui| {
-                if ui.button("Delete Bricks By...").clicked() {
+                let enabled = self.save_data.is_some();
+                if ui.add_enabled(enabled, Button::new("Delete Bricks By...")).clicked() {
                     self.show_delete_window = true;
+                }
+                if ui.add_enabled(enabled, Button::new("Modify Components...")).clicked() {
+                    self.show_components_window = true;
                 }
             });
             view_menu_ui(ui, ctx, frame);

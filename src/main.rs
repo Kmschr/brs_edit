@@ -67,6 +67,7 @@ struct EditorApp {
     save_colors: Vec<([f32; 4], u32)>,
     preview_handle: Option<TextureHandle>,
     show_delete_window: bool,
+    show_components_window: bool,
 }
 
 // use channels to get paths back from the native file dialog in another thread
@@ -112,6 +113,7 @@ impl EditorApp {
             save_colors: vec![],
             preview_handle: None,
             show_delete_window: false,
+            show_components_window: false,
         }
     }
 }

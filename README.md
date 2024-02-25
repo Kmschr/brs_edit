@@ -6,6 +6,10 @@ Please make a backup of saves before manipulating them. It is very possible to e
 ## TODO
 - investigate if all dependencies are really needed at the moment
 - add delete by owner, delete by material, delete by asset, delete w/ components
+- enable/disable light shadows
+- limit radius of lights
+- remove components
+- modify collisions
 - add import brs
 - add export obj
 
