@@ -38,7 +38,8 @@ pub fn ui(ui: &mut egui::Ui, preview: &Option<TextureHandle>) -> Option<Receiver
             ui.label(format!("{} x {}", preview_size.x, preview_size.y));
             let display_size = contain_preview_size(preview_size);
             egui::Frame::none().shadow(epaint::Shadow::big_dark()).show(ui, |ui| {
-                ui.image(texture, display_size);
+                let image = egui::Image::new(texture).max_size(display_size);
+                ui.add(image);
             });
         }
         ui.add_space(5.0);

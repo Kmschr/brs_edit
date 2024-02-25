@@ -58,7 +58,8 @@ fn table_ui(bricks: &mut Vec<Brick>, ui: &mut egui::Ui) {
             });
         })
         .body(|body| {
-            body.rows(15.0, bricks.len(), |row_index, mut row| {
+            body.rows(15.0, bricks.len(), |mut row| {
+                let row_index = row.index();
                 row.col(|ui| {
                     ui.label(row_index.to_string());
                 });

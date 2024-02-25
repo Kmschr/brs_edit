@@ -3,7 +3,7 @@ use brickadia::save::SaveData;
 use egui::Button;
 
 impl crate::EditorApp {
-    pub fn show_menu(&mut self, ui: &mut egui::Ui, ctx: &egui::Context, frame: &mut eframe::Frame) {
+    pub fn show_menu(&mut self, ui: &mut egui::Ui, ctx: &egui::Context) {
         egui::menu::bar(ui, |ui| {
             self.file_menu_ui(ui, ctx);
             ui.menu_button("Edit", |ui| {
@@ -11,11 +11,14 @@ impl crate::EditorApp {
                 if ui.add_enabled(enabled, Button::new("Delete Bricks By...")).clicked() {
                     self.show_delete_window = true;
                 }
-                if ui.add_enabled(enabled, Button::new("Modify Components...")).clicked() {
+                if ui.add_enabled(enabled, Button::new("Components...")).clicked() {
                     self.show_components_window = true;
                 }
+                if ui.add_enabled(enabled, Button::new("Ownership...")).clicked() {
+                    self.show_ownership_window = true;
+                }
             });
-            view_menu_ui(ui, ctx, frame);
+            view_menu_ui(ui, ctx);
             ui.menu_button("Help", |ui| if ui.button("About").clicked() {});
         });
     }
@@ -72,14 +75,14 @@ impl crate::EditorApp {
     }
 }
 
-fn view_menu_ui(ui: &mut egui::Ui, ctx: &egui::Context, frame: &mut eframe::Frame) {
+fn view_menu_ui(ui: &mut egui::Ui, ctx: &egui::Context) {
     ui.menu_button("View", |ui| {
         let fullscreen_button = Button::new("Full Screen")
             .shortcut_text(ctx.format_shortcut(&shortcuts::FULLSCREEN_SHORTCUT));
         if ui.add(fullscreen_button).clicked() {
-            crate::view::toggle_fullscreen(frame);
+            crate::view::toggle_fullscreen(ctx);
         }
         ui.separator();
-        egui::gui_zoom::zoom_menu_buttons(ui, frame.info().native_pixels_per_point);
+        egui::gui_zoom::zoom_menu_buttons(ui);
     });
 }

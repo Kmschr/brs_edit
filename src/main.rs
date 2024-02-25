@@ -37,22 +37,22 @@ const DEFAULT_WINDOW_SIZE: Vec2 = Vec2::new(1920.0, 1080.0);
 //
 // * Import > io (Bricklink Studio)
 fn main() {
-    env_logger::init();
+    let icon = egui::IconData {
+        rgba: icon::ICON.to_vec(),
+        width: 32,
+        height: 32,
+    };
     let native_options = eframe::NativeOptions {
-        initial_window_size: Some(DEFAULT_WINDOW_SIZE),
-        icon_data: Some(eframe::IconData {
-            rgba: icon::ICON.to_vec(),
-            width: 32,
-            height: 32,
-        }),
-        renderer: eframe::Renderer::Wgpu,
+        viewport: egui::ViewportBuilder::default()
+            .with_inner_size(DEFAULT_WINDOW_SIZE)
+            .with_icon(icon),
         ..Default::default()
     };
     eframe::run_native(
         "BRS Editor",
         native_options,
         Box::new(|cc| Box::new(EditorApp::new(cc))),
-    )
+    ).unwrap();
 }
 
 struct EditorApp {
@@ -68,6 +68,7 @@ struct EditorApp {
     preview_handle: Option<TextureHandle>,
     show_delete_window: bool,
     show_components_window: bool,
+    show_ownership_window: bool,
 }
 
 // use channels to get paths back from the native file dialog in another thread
@@ -114,18 +115,19 @@ impl EditorApp {
             preview_handle: None,
             show_delete_window: false,
             show_components_window: false,
+            show_ownership_window: false,
         }
     }
 }
 
 impl eframe::App for EditorApp {
-    fn update(&mut self, ctx: &egui::Context, frame: &mut eframe::Frame) {
-        self.handle_shortcuts(ctx, frame);
+    fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
+        self.handle_shortcuts(ctx);
         self.receive_file_dialog_paths(ctx);
         TopBottomPanel::top("menu_panel")
             .frame(gui::TOP_FRAME)
             .show(ctx, |ui| {
-                self.show_menu(ui, ctx, frame);
+                self.show_menu(ui, ctx);
             });
         TopBottomPanel::bottom("info_panel")
             .frame(gui::BOTTOM_FRAME)

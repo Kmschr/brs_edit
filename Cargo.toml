@@ -8,11 +8,10 @@ edition = "2021"
 [dependencies]
 brickadia = { version = "0.1", default_features = false, features = ["util", "zlib-ng"] }
 dirs = "5.0"
-eframe = { version="0.20.0", features=["wgpu"] }
-egui = { version="0.20.0", features=["bytemuck", "tracing"]}
-egui_extras = "0.20.0"
+eframe = "0.26"
+egui = "0.26"
+egui_extras = "0.26"
 image = "0.24.5"
 itertools = "0.12"
 num-format = "0.4.4"
 rfd = "0.14"
-env_logger = "0.11"

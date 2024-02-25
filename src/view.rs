@@ -1,7 +1,7 @@
-pub fn toggle_fullscreen(frame: &mut eframe::Frame) {
-    if frame.info().window_info.fullscreen {
-        frame.set_fullscreen(false);
-    } else {
-        frame.set_fullscreen(true);
+use egui::ViewportCommand;
+
+pub fn toggle_fullscreen(ctx: &egui::Context) {
+    if let Some(fullscreen) = ctx.input_mut(|i| i.viewport().fullscreen) {
+        ctx.send_viewport_cmd(ViewportCommand::Fullscreen(!fullscreen));
     }
 }

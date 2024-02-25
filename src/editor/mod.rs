@@ -4,17 +4,12 @@ mod header2;
 mod metadata;
 mod preview;
 
-use egui::TextStyle;
-
 use crate::{gui, EditorApp};
 
 impl EditorApp {
     pub fn editor_ui(&mut self, ui: &mut egui::Ui) {
         if let Some(save_data) = &mut self.save_data {
             ui.visuals_mut().override_text_color = Some(egui::Color32::WHITE);
-            if let Some(style) = ui.style_mut().text_styles.get_mut(&TextStyle::Button) {
-                style.size = 25.0;
-            }
             metadata::ui(ui, save_data);
             header1::ui(ui, &mut save_data.header1);
             header2::ui(ui, &mut save_data.header2, &mut self.save_colors);

@@ -16,10 +16,9 @@ fn image_ui(ui: &mut egui::Ui, texture: &TextureHandle) {
     ui.vertical_centered(|ui| {
         let preview_size = texture.size_vec2();
         let preview_aspect_ratio = preview_size.x / preview_size.y;
-        ui.image(
-            texture,
-            [PREVIEW_HEIGHT * preview_aspect_ratio, PREVIEW_HEIGHT],
-        );
+        let size = [PREVIEW_HEIGHT * preview_aspect_ratio, PREVIEW_HEIGHT];
+        let image = egui::Image::new(texture).max_size(size.into());
+        ui.add(image);
     });
 }
 
