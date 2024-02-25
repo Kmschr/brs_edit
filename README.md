@@ -8,3 +8,5 @@ Please make a backup of saves before manipulating them. It is very possible to e
 - add delete by owner, delete by material, delete by asset, delete w/ components
 - add import brs
 - add export obj
+
+Special thanks to voximity for maintaining brickadia-rs

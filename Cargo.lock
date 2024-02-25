@@ -272,7 +272,6 @@ name = "brs-edit"
 version = "0.1.0"
 dependencies = [
  "brickadia",
- "bytemuck",
  "dirs",
  "eframe",
  "egui",
