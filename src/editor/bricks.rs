@@ -30,6 +30,7 @@ fn table_ui(bricks: &mut Vec<Brick>, ui: &mut egui::Ui) {
         .columns(Column::exact(100.0), 3)
         .column(Column::exact(150.0))
         .column(Column::exact(150.0))
+        .column(Column::exact(150.0))
         .header(14.0, |mut header| {
             header.col(|ui| {
                 ui.label("Brick #");
@@ -51,6 +52,9 @@ fn table_ui(bricks: &mut Vec<Brick>, ui: &mut egui::Ui) {
             });
             header.col(|ui| {
                 ui.label("Size");
+            });
+            header.col(|ui| {
+                ui.label("Color");
             });
         })
         .body(|body| {
@@ -102,6 +106,26 @@ fn table_ui(bricks: &mut Vec<Brick>, ui: &mut egui::Ui) {
                         if gui::button(ui, "Add Size", true) {
                             bricks[row_index].size = brickadia::save::Size::Procedural(0, 0, 0);
                         }
+                    }
+                });
+                row.col(|ui| match &mut bricks[row_index].color {
+                    brickadia::save::BrickColor::Index(i) => {
+                        ui.horizontal(|ui| {
+                            ui.label("Index ");
+                            ui.add(DragValue::new(i));
+                        });
+                    }
+                    brickadia::save::BrickColor::Unique(unique) => {
+                        let mut color = [
+                            unique.r as f32 / 255.0,
+                            unique.g as f32 / 255.0,
+                            unique.b as f32 / 255.0,
+                            unique.a as f32 / 255.0,
+                        ];
+                        ui.horizontal(|ui| {
+                            ui.label("Custom ");
+                            ui.color_edit_button_rgba_premultiplied(&mut color);
+                        });
                     }
                 });
             });

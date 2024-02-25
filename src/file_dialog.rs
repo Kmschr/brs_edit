@@ -1,16 +1,13 @@
-use std::env;
-use std::io::Cursor;
-use std::path::PathBuf;
-use std::sync::mpsc::Receiver;
-use std::{
-    sync::mpsc,
-    thread,
-};
 use crate::open;
 use crate::EditorApp;
 use brickadia::save::Preview;
 use egui::Context;
 use rfd::FileDialog;
+use std::env;
+use std::io::Cursor;
+use std::path::PathBuf;
+use std::sync::mpsc::Receiver;
+use std::{sync::mpsc, thread};
 
 impl EditorApp {
     pub fn receive_file_dialog_paths(&mut self, ctx: &Context) {
@@ -54,20 +51,23 @@ impl EditorApp {
                                     image::ImageFormat::Png => {
                                         println!("Setting PNG data");
                                         save_data.preview = Preview::PNG(buffer.to_vec());
-                                    },
+                                    }
                                     image::ImageFormat::Jpeg => {
                                         println!("Setting JPEF data");
                                         save_data.preview = Preview::JPEG(buffer.to_vec());
-                                    },
+                                    }
                                     _ => {
                                         println!("Setting other format data");
                                         if let Ok(img) = image::load(Cursor::new(buffer), format) {
                                             let mut buf = Cursor::new(Vec::new());
-                                            if img.write_to(&mut buf, image::ImageFormat::Png).is_ok() {
+                                            if img
+                                                .write_to(&mut buf, image::ImageFormat::Png)
+                                                .is_ok()
+                                            {
                                                 save_data.preview = Preview::PNG(buf.into_inner());
                                             }
                                         }
-                                    },
+                                    }
                                 }
                                 self.preview_handle = open::load_preview(&save_data, ctx);
                             }
@@ -105,11 +105,10 @@ impl EditorApp {
             let (tx, rx) = mpsc::channel();
             self.receivers.file_path_receiver = Some(rx);
             thread::spawn(move || {
-                let file =
-                    FileDialog::new()
-                        .set_directory("%USERPROFILE%/AppData")
-                        .add_filter("Brickadia Savefile", &["brs", "BRS"])
-                        .pick_file();
+                let file = FileDialog::new()
+                    .set_directory("%USERPROFILE%/AppData")
+                    .add_filter("Brickadia Savefile", &["brs", "BRS"])
+                    .pick_file();
                 tx.send(file).unwrap();
             });
         }
@@ -120,7 +119,9 @@ impl EditorApp {
             let (tx, rx) = mpsc::channel();
             self.receivers.folder_path_receiver = Some(rx);
             thread::spawn(move || {
-                let folder = FileDialog::new().set_directory("%USERPROFILE%/AppData").pick_folder();
+                let folder = FileDialog::new()
+                    .set_directory("%USERPROFILE%/AppData")
+                    .pick_folder();
                 tx.send(folder).unwrap();
             });
         }
@@ -131,11 +132,10 @@ impl EditorApp {
             let (tx, rx) = mpsc::channel();
             self.receivers.save_as_path_receiever = Some(rx);
             thread::spawn(move || {
-                let file =
-                    FileDialog::new()
-                        .set_directory("%USERPROFILE%/AppData")
-                        .add_filter("Brickadia Savefile", &["brs"])
-                        .save_file();
+                let file = FileDialog::new()
+                    .set_directory("%USERPROFILE%/AppData")
+                    .add_filter("Brickadia Savefile", &["brs"])
+                    .save_file();
                 tx.send(file).unwrap();
             });
         }
@@ -152,7 +152,27 @@ impl EditorApp {
                 let (tx, rx) = mpsc::channel();
                 self.receivers.save_preview_path_receiver = Some(rx);
                 thread::spawn(move || {
-                    let file = FileDialog::new().add_filter("Image", &extensions).save_file();
+                    let file = FileDialog::new()
+                        .add_filter("Image", &extensions)
+                        .save_file();
+                    tx.send(file).unwrap();
+                });
+            }
+        }
+    }
+
+    pub fn choose_export_palette(&mut self) {
+        if self.receivers.save_palette_path_reciever.is_none() {
+            if let Some(save_data) = &self.save_data {
+                if save_data.header2.colors.is_empty() {
+                    return;
+                }
+                let (tx, rx) = mpsc::channel();
+                self.receivers.save_preview_path_receiver = Some(rx);
+                thread::spawn(move || {
+                    let file = FileDialog::new()
+                        .add_filter("Brickadia Color Palette", &["bp"])
+                        .save_file();
                     tx.send(file).unwrap();
                 });
             }
@@ -163,10 +183,12 @@ impl EditorApp {
 pub fn choose_preview() -> Receiver<Option<PathBuf>> {
     let (tx, rx) = mpsc::channel();
     thread::spawn(move || {
-        let file =
-            FileDialog::new()
-                .add_filter("Image", &["png", "jpg", "jpeg", "tiff", "gif", "bmp", "ico", "webp"])
-                .pick_file();
+        let file = FileDialog::new()
+            .add_filter(
+                "Image",
+                &["png", "jpg", "jpeg", "tiff", "gif", "bmp", "ico", "webp"],
+            )
+            .pick_file();
         tx.send(file).unwrap();
     });
     rx
@@ -175,10 +197,14 @@ pub fn choose_preview() -> Receiver<Option<PathBuf>> {
 pub fn default_build_directory() -> Option<PathBuf> {
     match env::consts::OS {
         "windows" => dirs::data_local_dir().and_then(|path| {
-            Some(PathBuf::from(path.to_string_lossy().to_string() + "\\Brickadia\\Saved\\Builds"))
+            Some(PathBuf::from(
+                path.to_string_lossy().to_string() + "\\Brickadia\\Saved\\Builds",
+            ))
         }),
         "linux" => dirs::config_dir().and_then(|path| {
-            Some(PathBuf::from(path.to_string_lossy().to_string() + "/Epic/Brickadia/Saved/Builds"))
+            Some(PathBuf::from(
+                path.to_string_lossy().to_string() + "/Epic/Brickadia/Saved/Builds",
+            ))
         }),
         _ => None,
     }

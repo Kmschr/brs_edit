@@ -54,7 +54,11 @@ fn main() {
         renderer: eframe::Renderer::Wgpu,
         ..Default::default()
     };
-    eframe::run_native("BRS Editor", native_options, Box::new(|cc| Box::new(EditorApp::new(cc))))
+    eframe::run_native(
+        "BRS Editor",
+        native_options,
+        Box::new(|cc| Box::new(EditorApp::new(cc))),
+    )
 }
 
 struct EditorApp {
@@ -84,6 +88,8 @@ struct Receivers {
     save_as_path_receiever: Option<Receiver<Option<PathBuf>>>,
     // Export > Preview
     save_preview_path_receiver: Option<Receiver<Option<PathBuf>>>,
+    // Export > Palette
+    save_palette_path_reciever: Option<Receiver<Option<PathBuf>>>,
 }
 
 impl Receivers {
@@ -94,18 +100,21 @@ impl Receivers {
             preview_path_receiver: None,
             save_as_path_receiever: None,
             save_preview_path_receiver: None,
+            save_palette_path_reciever: None,
         }
     }
 }
 
 impl EditorApp {
     fn new(cc: &eframe::CreationContext) -> Self {
-        let test_adapter =
-            pollster::block_on(wgpu::Instance::new(wgpu::Backends::PRIMARY).request_adapter(&RequestAdapterOptions {
+        let test_adapter = pollster::block_on(
+            wgpu::Instance::new(wgpu::Backends::PRIMARY).request_adapter(&RequestAdapterOptions {
                 power_preference: wgpu::PowerPreference::HighPerformance,
                 force_fallback_adapter: false,
                 compatible_surface: None,
-            })).unwrap();
+            }),
+        )
+        .unwrap();
         let test_backend = test_adapter.get_info().backend;
         println!("{:?}", test_backend);
         let wgpu_render_state = cc.wgpu_render_state.as_ref();
@@ -114,21 +123,24 @@ impl EditorApp {
             println!("{}", device.limits().max_buffer_size);
             let shader = device.create_shader_module(wgpu::ShaderModuleDescriptor {
                 label: Some("custom3d"),
-                source: wgpu::ShaderSource::Wgsl(include_str!("./custom3d_wgpu_shader.wgsl").into()),
+                source: wgpu::ShaderSource::Wgsl(
+                    include_str!("./custom3d_wgpu_shader.wgsl").into(),
+                ),
             });
-            let bind_group_layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
-                label: Some("custom3d"),
-                entries: &[wgpu::BindGroupLayoutEntry {
-                    binding: 0,
-                    visibility: wgpu::ShaderStages::VERTEX,
-                    ty: wgpu::BindingType::Buffer {
-                        ty: wgpu::BufferBindingType::Uniform,
-                        has_dynamic_offset: false,
-                        min_binding_size: NonZeroU64::new(16),
-                    },
-                    count: None,
-                }],
-            });
+            let bind_group_layout =
+                device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
+                    label: Some("custom3d"),
+                    entries: &[wgpu::BindGroupLayoutEntry {
+                        binding: 0,
+                        visibility: wgpu::ShaderStages::VERTEX,
+                        ty: wgpu::BindingType::Buffer {
+                            ty: wgpu::BufferBindingType::Uniform,
+                            has_dynamic_offset: false,
+                            min_binding_size: NonZeroU64::new(16),
+                        },
+                        count: None,
+                    }],
+                });
             let pipeline_layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
                 label: Some("custom3d"),
                 bind_group_layouts: &[&bind_group_layout],
@@ -168,11 +180,15 @@ impl EditorApp {
                     resource: uniform_buffer.as_entire_binding(),
                 }],
             });
-            wgpu_render_state.renderer.write().paint_callback_resources.insert(TriangleRenderResources {
-                pipeline,
-                bind_group,
-                uniform_buffer,
-            });
+            wgpu_render_state
+                .renderer
+                .write()
+                .paint_callback_resources
+                .insert(TriangleRenderResources {
+                    pipeline,
+                    bind_group,
+                    uniform_buffer,
+                });
         }
         Self {
             _angle: 0.0,
@@ -195,12 +211,16 @@ impl eframe::App for EditorApp {
     fn update(&mut self, ctx: &egui::Context, frame: &mut eframe::Frame) {
         self.handle_shortcuts(ctx, frame);
         self.receive_file_dialog_paths(ctx);
-        TopBottomPanel::top("menu_panel").frame(gui::TOP_FRAME).show(ctx, |ui| {
-            self.show_menu(ui, ctx, frame);
-        });
-        TopBottomPanel::bottom("info_panel").frame(gui::BOTTOM_FRAME).show(ctx, |ui| {
-            self.bottom_panel(ui);
-        });
+        TopBottomPanel::top("menu_panel")
+            .frame(gui::TOP_FRAME)
+            .show(ctx, |ui| {
+                self.show_menu(ui, ctx, frame);
+            });
+        TopBottomPanel::bottom("info_panel")
+            .frame(gui::BOTTOM_FRAME)
+            .show(ctx, |ui| {
+                self.bottom_panel(ui);
+            });
         SidePanel::left("file_panel")
             .resizable(true)
             .frame(gui::LEFT_FRAME)
@@ -211,18 +231,20 @@ impl eframe::App for EditorApp {
 
         // SidePanel::right("render_panel") .resizable(false) .frame(gui::RIGHT_FRAME)
         // .max_width(DEFAULT_WINDOW_SIZE.x / 2.0) .show(ctx, |ui| { self.render_ui(ui); });
-        CentralPanel::default().frame(gui::CENTER_FRAME).show(ctx, |ui| {
-            if self.file_path.is_none() && self.save_data.is_none() {
-                self.starting_page(ui);
-            } else if self.save_data.is_some() {
-                ScrollArea::vertical().stick_to_right(true).show(ui, |ui| {
-                    self.editor_ui(ui);
-                });
-            }
-            if self.show_delete_window {
-                self.delete_ui(ctx);
-            }
-        });
+        CentralPanel::default()
+            .frame(gui::CENTER_FRAME)
+            .show(ctx, |ui| {
+                if self.file_path.is_none() && self.save_data.is_none() {
+                    self.starting_page(ui);
+                } else if self.save_data.is_some() {
+                    ScrollArea::vertical().stick_to_right(true).show(ui, |ui| {
+                        self.editor_ui(ui);
+                    });
+                }
+                if self.show_delete_window {
+                    self.delete_ui(ctx);
+                }
+            });
     }
 }
 
