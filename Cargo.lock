@@ -254,9 +254,9 @@ dependencies = [
 
 [[package]]
 name = "brickadia"
-version = "0.1.30"
+version = "0.1.32"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5d98ef0ad3e31411df6534d3a733eef7a2f32989c8aff9c9326c3308c6823441"
+checksum = "a35c1969eaba86c9edad19ced8c7dd6e774868a028a5cffa485dc28690f622fd"
 dependencies = [
  "bitstream-io",
  "byteorder",
@@ -970,6 +970,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "a8a2db397cb1c8772f31494cb8917e48cd1e64f0fa7efac59fbd741a0a8ce841"
 dependencies = [
  "crc32fast",
+ "libz-ng-sys",
  "miniz_oxide",
 ]
 
@@ -1544,6 +1545,16 @@ checksum = "b67380fd3b2fbe7527a606e18729d21c6f3951633d0500574c4dc22d2d638b9f"
 dependencies = [
  "cfg-if",
  "winapi",
+]
+
+[[package]]
+name = "libz-ng-sys"
+version = "1.1.15"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "c6409efc61b12687963e602df8ecf70e8ddacf95bc6576bcf16e3ac6328083c5"
+dependencies = [
+ "cmake",
+ "libc",
 ]
 
 [[package]]
