@@ -57,7 +57,8 @@ fn directory_ui(
                         .sorted_by(|a, b| {
                             if a.is_dir() && b.is_file() {
                                 return std::cmp::Ordering::Less;
-                            } else if a.is_file() && b.is_dir() {
+                            }
+                            if a.is_file() && b.is_dir() {
                                 return std::cmp::Ordering::Greater;
                             }
                             std::cmp::Ordering::Equal

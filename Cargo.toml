@@ -6,14 +6,13 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-brickadia = { version = "0.1.32", default_features = false, features = ["util", "zlib-ng"] }
-dirs = "4.0.0"
+brickadia = { version = "0.1", default_features = false, features = ["util", "zlib-ng"] }
+dirs = "5.0"
 eframe = { version="0.20.0", features=["wgpu"] }
 egui = { version="0.20.0", features=["bytemuck", "tracing"]}
 egui_extras = "0.20.0"
 image = "0.24.5"
-itertools = "0.10.5"
+itertools = "0.12"
 num-format = "0.4.4"
-rfd = "0.10.0"
-pollster = "0.2.5"
-env_logger = "0.10.0"
+rfd = "0.14"
+env_logger = "0.11"
