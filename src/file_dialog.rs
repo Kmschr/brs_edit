@@ -16,12 +16,14 @@ impl EditorApp {
         self.receive_preview_path(ctx);
         self.receive_save_as_path();
         self.receive_save_preview_path();
+        self.recieve_save_palette_path();
     }
 
     fn receive_file_path(&mut self, ctx: &egui::Context) {
         if let Some(rx) = &self.receivers.file_path_receiver {
             if let Ok(data) = rx.try_recv() {
                 self.receivers.file_path_receiver = None;
+                self.receivers.num_active -= 1;
                 if let Some(path) = data {
                     self.open(&path, ctx);
                 }
@@ -33,6 +35,7 @@ impl EditorApp {
         if let Some(rx) = &self.receivers.folder_path_receiver {
             if let Ok(data) = rx.try_recv() {
                 self.receivers.folder_path_receiver = None;
+                self.receivers.num_active -= 1;
                 self.folder_path = data;
             }
         }
@@ -43,6 +46,7 @@ impl EditorApp {
             if let Ok(data) = rx.try_recv() {
                 println!("Preview path receiver has data\n {:?}", data);
                 self.receivers.preview_path_receiver = None;
+                self.receivers.num_active -= 1;
                 if let Some(save_data) = &mut self.save_data {
                     if let Some(path) = data {
                         if let Ok(buffer) = std::fs::read(path) {
@@ -82,6 +86,7 @@ impl EditorApp {
         if let Some(rx) = &self.receivers.save_as_path_receiever {
             if let Ok(data) = rx.try_recv() {
                 self.receivers.save_as_path_receiever = None;
+                self.receivers.num_active -= 1;
                 if let Some(file_path) = data {
                     self.save_as(&file_path);
                 }
@@ -93,8 +98,21 @@ impl EditorApp {
         if let Some(rx) = &self.receivers.save_preview_path_receiver {
             if let Ok(data) = rx.try_recv() {
                 self.receivers.save_preview_path_receiver = None;
+                self.receivers.num_active -= 1;
                 if let Some(file_path) = data {
                     self.export_preview(file_path);
+                }
+            }
+        }
+    }
+
+    fn recieve_save_palette_path(&mut self) {
+        if let Some(rx) = &self.receivers.save_palette_path_reciever {
+            if let Ok(data) = rx.try_recv() {
+                self.receivers.save_palette_path_reciever = None;
+                self.receivers.num_active -= 1;
+                if let Some(file_path) = data {
+                    self.export_palette(file_path);
                 }
             }
         }
@@ -104,6 +122,7 @@ impl EditorApp {
         if self.receivers.file_path_receiver.is_none() {
             let (tx, rx) = mpsc::channel();
             self.receivers.file_path_receiver = Some(rx);
+            self.receivers.num_active += 1;
             thread::spawn(move || {
                 let file = FileDialog::new()
                     .set_directory("%USERPROFILE%/AppData")
@@ -118,6 +137,7 @@ impl EditorApp {
         if self.receivers.folder_path_receiver.is_none() {
             let (tx, rx) = mpsc::channel();
             self.receivers.folder_path_receiver = Some(rx);
+            self.receivers.num_active += 1;
             thread::spawn(move || {
                 let folder = FileDialog::new()
                     .set_directory("%USERPROFILE%/AppData")
@@ -131,6 +151,7 @@ impl EditorApp {
         if self.receivers.save_as_path_receiever.is_none() {
             let (tx, rx) = mpsc::channel();
             self.receivers.save_as_path_receiever = Some(rx);
+            self.receivers.num_active += 1;
             thread::spawn(move || {
                 let file = FileDialog::new()
                     .set_directory("%USERPROFILE%/AppData")
@@ -151,6 +172,7 @@ impl EditorApp {
                 };
                 let (tx, rx) = mpsc::channel();
                 self.receivers.save_preview_path_receiver = Some(rx);
+                self.receivers.num_active += 1;
                 thread::spawn(move || {
                     let file = FileDialog::new()
                         .add_filter("Image", &extensions)
@@ -168,7 +190,8 @@ impl EditorApp {
                     return;
                 }
                 let (tx, rx) = mpsc::channel();
-                self.receivers.save_preview_path_receiver = Some(rx);
+                self.receivers.save_palette_path_reciever = Some(rx);
+                self.receivers.num_active += 1;
                 thread::spawn(move || {
                     let file = FileDialog::new()
                         .add_filter("Brickadia Color Palette", &["bp"])

@@ -42,4 +42,10 @@ impl EditorApp {
             }
         }
     }
+
+    pub fn export_palette(&self, _path: PathBuf) {
+        if let Some(_save_data) = &self.save_data {
+            
+        }
+    }
 }

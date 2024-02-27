@@ -73,6 +73,7 @@ struct EditorApp {
 
 // use channels to get paths back from the native file dialog in another thread
 struct Receivers {
+    num_active: usize,
     // Open File
     file_path_receiver: Option<Receiver<Option<PathBuf>>>,
     // Open Folder
@@ -90,6 +91,7 @@ struct Receivers {
 impl Receivers {
     fn new() -> Self {
         Self {
+            num_active: 0,
             file_path_receiver: None,
             folder_path_receiver: None,
             preview_path_receiver: None,
@@ -123,7 +125,9 @@ impl EditorApp {
 impl eframe::App for EditorApp {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
         self.handle_shortcuts(ctx);
-        self.receive_file_dialog_paths(ctx);
+        if self.receivers.num_active > 0 {
+            self.receive_file_dialog_paths(ctx);
+        }
         TopBottomPanel::top("menu_panel")
             .frame(gui::TOP_FRAME)
             .show(ctx, |ui| {
@@ -141,9 +145,6 @@ impl eframe::App for EditorApp {
             .show(ctx, |ui| {
                 self.explorer_ui(ui, ctx);
             });
-
-        // SidePanel::right("render_panel") .resizable(false) .frame(gui::RIGHT_FRAME)
-        // .max_width(DEFAULT_WINDOW_SIZE.x / 2.0) .show(ctx, |ui| { self.render_ui(ui); });
         CentralPanel::default()
             .frame(gui::CENTER_FRAME)
             .show(ctx, |ui| {
@@ -169,9 +170,9 @@ impl EditorApp {
             }
             ui.with_layout(egui::Layout::right_to_left(egui::Align::LEFT), |ui| {
                 ui.add_space(5.0);
-                let icon = RichText::new("\u{e624}").strong();
+                let github_icon = RichText::new("\u{e624}").strong();
                 ui.visuals_mut().hyperlink_color = Color32::WHITE;
-                ui.hyperlink_to(icon, "https://github.com/Kmschr/brs_edit");
+                ui.hyperlink_to(github_icon, "https://github.com/Kmschr/brs_edit");
             });
         });
     }
