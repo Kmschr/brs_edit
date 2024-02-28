@@ -11,12 +11,12 @@ impl crate::EditorApp {
                 if ui.add_enabled(enabled, Button::new("Delete Bricks By...")).clicked() {
                     self.show_delete_window = true;
                 }
-                if ui.add_enabled(enabled, Button::new("Components...")).clicked() {
-                    self.show_components_window = true;
-                }
-                if ui.add_enabled(enabled, Button::new("Ownership...")).clicked() {
-                    self.show_ownership_window = true;
-                }
+                // if ui.add_enabled(enabled, Button::new("Components...")).clicked() {
+                //     self.show_components_window = true;
+                // }
+                // if ui.add_enabled(enabled, Button::new("Ownership...")).clicked() {
+                //     self.show_ownership_window = true;
+                // }
             });
             view_menu_ui(ui, ctx);
             ui.menu_button("Help", |ui| if ui.button("About").clicked() {});
@@ -54,11 +54,11 @@ impl crate::EditorApp {
                 self.choose_save_as();
             }
             ui.separator();
-            ui.menu_button("Import", |ui| {
-                if ui.button("Blockland Save (.BLS)").clicked() {}
-                if ui.button("Wavefront (.OBJ)").clicked() {}
-                if ui.button("Heightmap").clicked() {}
-            });
+            // ui.menu_button("Import", |ui| {
+            //     if ui.button("Blockland Save (.BLS)").clicked() {}
+            //     if ui.button("Wavefront (.OBJ)").clicked() {}
+            //     if ui.button("Heightmap").clicked() {}
+            // });
             ui.menu_button("Export", |ui| {
                 if ui.button("Preview Image").clicked() {
                     self.choose_export_preview();

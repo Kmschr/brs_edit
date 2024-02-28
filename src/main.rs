@@ -56,7 +56,6 @@ fn main() {
 }
 
 struct EditorApp {
-    _angle: f32,
     default_build_dir: Option<PathBuf>,
     default_documents_dir: Option<PathBuf>,
     default_downloads_dir: Option<PathBuf>,
@@ -105,7 +104,6 @@ impl Receivers {
 impl EditorApp {
     fn new(_cc: &eframe::CreationContext) -> Self {
         Self {
-            _angle: 0.0,
             default_build_dir: default_build_directory(),
             default_documents_dir: dirs::document_dir(),
             default_downloads_dir: dirs::download_dir(),
