@@ -38,4 +38,4 @@ BRS-Edit is a fan-made tool for editing savefiles for Brickadia, a multiplayer b
 
 ## 
 
-Special thanks to voximity for maintaining brickadia-rs
+Special thanks to *voximity* for maintaining `brickadia-rs`
