@@ -21,21 +21,6 @@ use std::sync::mpsc::Receiver;
 
 const DEFAULT_WINDOW_SIZE: Vec2 = Vec2::new(1920.0, 1080.0);
 
-// TODO:
-//
-// * See if a file was modified
-//
-// * Shortcuts for saving
-//
-// * Save As
-//
-// * Render preview (GLOW) ?
-//
-// * Import > BLS
-//
-// * Import > OBJ
-//
-// * Import > io (Bricklink Studio)
 fn main() {
     let icon = egui::IconData {
         rgba: icon::ICON.to_vec(),
