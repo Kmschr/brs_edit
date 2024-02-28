@@ -1,6 +1,6 @@
 # BRS-Edit
 
-BRS-Edit is a fan-made tool for editing savefiles for Brickadia, a multiplayer brick building game. It uses egui to provide a native desktop application.
+BRS-Edit is a fan-made tool for editing savefiles for [Brickadia](https://brickadia.com/), a multiplayer brick building game. It uses egui to provide a native desktop application.
 
 ![editor](./editor.png)
 
