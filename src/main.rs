@@ -6,6 +6,7 @@ mod export;
 mod file_dialog;
 mod gui;
 mod icon;
+mod import;
 mod menu;
 mod open;
 mod save;
@@ -67,11 +68,13 @@ struct Receivers {
     // Save As...
     save_as_path_receiever: Option<Receiver<Option<PathBuf>>>,
     // Export > Preview
-    save_preview_path_receiver: Option<Receiver<Option<PathBuf>>>,
+    export_preview_path_receiver: Option<Receiver<Option<PathBuf>>>,
     // Export > JSON
-    save_json_path_receiver: Option<Receiver<Option<PathBuf>>>,
+    export_json_path_receiver: Option<Receiver<Option<PathBuf>>>,
     // Export > Palette
-    save_palette_path_reciever: Option<Receiver<Option<PathBuf>>>,
+    export_palette_path_reciever: Option<Receiver<Option<PathBuf>>>,
+    // Import > JSON
+    import_json_path_receiver: Option<Receiver<Option<PathBuf>>>,
 }
 
 impl EditorApp {

@@ -15,9 +15,10 @@ impl EditorApp {
         self.receive_folder_path();
         self.receive_preview_path(ctx);
         self.receive_save_as_path();
-        self.receive_save_preview_path();
-        self.receive_save_json_path();
-        self.recieve_save_palette_path();
+        self.receive_export_preview_path();
+        self.receive_export_json_path();
+        self.receive_export_palette_path();
+        self.receive_import_json_path();
     }
 
     fn receive_file_path(&mut self, ctx: &egui::Context) {
@@ -95,10 +96,10 @@ impl EditorApp {
         }
     }
 
-    fn receive_save_preview_path(&mut self) {
-        if let Some(rx) = &self.receivers.save_preview_path_receiver {
+    fn receive_export_preview_path(&mut self) {
+        if let Some(rx) = &self.receivers.export_preview_path_receiver {
             if let Ok(data) = rx.try_recv() {
-                self.receivers.save_preview_path_receiver = None;
+                self.receivers.export_preview_path_receiver = None;
                 self.receivers.num_active -= 1;
                 if let Some(file_path) = data {
                     self.export_preview(file_path);
@@ -107,10 +108,10 @@ impl EditorApp {
         }
     }
 
-    fn receive_save_json_path(&mut self) {
-        if let Some(rx) = &self.receivers.save_json_path_receiver {
+    fn receive_export_json_path(&mut self) {
+        if let Some(rx) = &self.receivers.export_json_path_receiver {
             if let Ok(data) = rx.try_recv() {
-                self.receivers.save_json_path_receiver = None;
+                self.receivers.export_json_path_receiver = None;
                 self.receivers.num_active -= 1;
                 if let Some(file_path) = data {
                     self.export_json(file_path);
@@ -119,13 +120,25 @@ impl EditorApp {
         }
     }
 
-    fn recieve_save_palette_path(&mut self) {
-        if let Some(rx) = &self.receivers.save_palette_path_reciever {
+    fn receive_export_palette_path(&mut self) {
+        if let Some(rx) = &self.receivers.export_palette_path_reciever {
             if let Ok(data) = rx.try_recv() {
-                self.receivers.save_palette_path_reciever = None;
+                self.receivers.export_palette_path_reciever = None;
                 self.receivers.num_active -= 1;
                 if let Some(file_path) = data {
                     self.export_palette(file_path);
+                }
+            }
+        }
+    }
+
+    fn receive_import_json_path(&mut self) {
+        if let Some(rx) = &self.receivers.import_json_path_receiver {
+            if let Ok(data) = rx.try_recv() {
+                self.receivers.import_json_path_receiver = None;
+                self.receivers.num_active -= 1;
+                if let Some(file_path) = data {
+                    self.import_json(file_path);
                 }
             }
         }
@@ -176,7 +189,7 @@ impl EditorApp {
     }
 
     pub fn choose_export_preview(&mut self) {
-        if self.receivers.save_preview_path_receiver.is_none() {
+        if self.receivers.export_preview_path_receiver.is_none() {
             if let Some(save_data) = &self.save_data {
                 let extensions = match save_data.preview {
                     Preview::JPEG(_) => vec!["jpg", "jpeg"],
@@ -184,7 +197,7 @@ impl EditorApp {
                     _ => vec![],
                 };
                 let (tx, rx) = mpsc::channel();
-                self.receivers.save_preview_path_receiver = Some(rx);
+                self.receivers.export_preview_path_receiver = Some(rx);
                 self.receivers.num_active += 1;
                 thread::spawn(move || {
                     let file = FileDialog::new()
@@ -197,9 +210,9 @@ impl EditorApp {
     }
 
     pub fn choose_export_json(&mut self) {
-        if self.receivers.save_json_path_receiver.is_none() {
+        if self.receivers.export_json_path_receiver.is_none() {
             let (tx, rx) = mpsc::channel();
-            self.receivers.save_json_path_receiver = Some(rx);
+            self.receivers.export_json_path_receiver = Some(rx);
             self.receivers.num_active += 1;
             thread::spawn(move || {
                 let file = FileDialog::new()
@@ -210,14 +223,28 @@ impl EditorApp {
         }
     }
 
+    pub fn choose_import_json(&mut self) {
+        if self.receivers.import_json_path_receiver.is_none() {
+            let (tx, rx) = mpsc::channel();
+            self.receivers.import_json_path_receiver = Some(rx);
+            self.receivers.num_active += 1;
+            thread::spawn(move || {
+                let file = FileDialog::new()
+                    .add_filter("JSON", &["json"])
+                    .pick_file();
+                tx.send(file).unwrap();
+            });
+        }
+    }
+
     pub fn _choose_export_palette(&mut self) {
-        if self.receivers.save_palette_path_reciever.is_none() {
+        if self.receivers.export_palette_path_reciever.is_none() {
             if let Some(save_data) = &self.save_data {
                 if save_data.header2.colors.is_empty() {
                     return;
                 }
                 let (tx, rx) = mpsc::channel();
-                self.receivers.save_palette_path_reciever = Some(rx);
+                self.receivers.export_palette_path_reciever = Some(rx);
                 self.receivers.num_active += 1;
                 thread::spawn(move || {
                     let file = FileDialog::new()

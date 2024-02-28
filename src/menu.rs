@@ -54,11 +54,14 @@ impl crate::EditorApp {
                 self.choose_save_as();
             }
             ui.separator();
-            // ui.menu_button("Import", |ui| {
-            //     if ui.button("Blockland Save (.BLS)").clicked() {}
-            //     if ui.button("Wavefront (.OBJ)").clicked() {}
-            //     if ui.button("Heightmap").clicked() {}
-            // });
+            ui.menu_button("Import", |ui| {
+                if ui.button("JSON").clicked() {
+                    self.choose_import_json();
+                }
+                // if ui.button("Blockland Save (.BLS)").clicked() {}
+                // if ui.button("Wavefront (.OBJ)").clicked() {}
+                // if ui.button("Heightmap").clicked() {}
+            });
             ui.menu_button("Export", |ui| {
                 if ui.button("Preview Image").clicked() {
                     self.choose_export_preview();
