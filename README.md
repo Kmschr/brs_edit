@@ -8,8 +8,9 @@ BRS-Edit is a fan-made tool for editing savefiles for [Brickadia](https://bricka
 !!!Please!!! make a **backup** of saves before manipulating them. It is very possible to edit saves such that they will not load properly and this tool does not protect you from doing so
 
 ## Current Features
-### Exports
+### Import/Exports
 - Export the save preview image
+- Import/Export save as JSON (preview image not included)
 
 ### Save Editing
 - Delete bricks by characteristics (all bricks of a certain color, owner, etc)
