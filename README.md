@@ -7,6 +7,10 @@ BRS-Edit is a fan-made tool for editing savefiles for [Brickadia](https://bricka
 ## Warning
 !!!Please!!! make a **backup** of saves before manipulating them. It is very possible to edit saves such that they will not load properly and this tool does not protect you from doing so
 
+## Installation
+
+Prebuilt binaries for Windows and Linux can be downloaded from the [GitHub releases page](https://github.com/Kmschr/brs_edit/releases/).
+
 ## Current Features
 ### Import/Exports
 - Export the save preview image
