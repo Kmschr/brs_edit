@@ -63,6 +63,9 @@ impl crate::EditorApp {
                 if ui.button("Preview Image").clicked() {
                     self.choose_export_preview();
                 }
+                if ui.button("JSON").clicked() {
+                    self.choose_export_json();
+                }
                 // if ui.button("Color Palette").clicked() {
                 //     self.choose_export_palette();
                 // }

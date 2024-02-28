@@ -43,6 +43,18 @@ impl EditorApp {
         }
     }
 
+    pub fn export_json(&self, path: PathBuf) {
+        if let Some(save_data) = &self.save_data {
+            if let Ok(json) = serde_json::to_string_pretty(save_data) {
+                if let Err(e) = std::fs::write(path, json) {
+                    eprintln!("{}", e);
+                }
+            } else {
+                eprintln!("Couldn't serialize save data to JSON");
+            }
+        }
+    }
+
     pub fn export_palette(&self, _path: PathBuf) {
         if let Some(_save_data) = &self.save_data {
             

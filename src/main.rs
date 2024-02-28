@@ -55,6 +55,7 @@ struct EditorApp {
 }
 
 // use channels to get paths back from the native file dialog in another thread
+#[derive(Default)]
 struct Receivers {
     num_active: usize,
     // Open File
@@ -67,22 +68,10 @@ struct Receivers {
     save_as_path_receiever: Option<Receiver<Option<PathBuf>>>,
     // Export > Preview
     save_preview_path_receiver: Option<Receiver<Option<PathBuf>>>,
+    // Export > JSON
+    save_json_path_receiver: Option<Receiver<Option<PathBuf>>>,
     // Export > Palette
     save_palette_path_reciever: Option<Receiver<Option<PathBuf>>>,
-}
-
-impl Receivers {
-    fn new() -> Self {
-        Self {
-            num_active: 0,
-            file_path_receiver: None,
-            folder_path_receiver: None,
-            preview_path_receiver: None,
-            save_as_path_receiever: None,
-            save_preview_path_receiver: None,
-            save_palette_path_reciever: None,
-        }
-    }
 }
 
 impl EditorApp {
@@ -93,7 +82,7 @@ impl EditorApp {
             default_downloads_dir: dirs::download_dir(),
             file_path: None,
             folder_path: None,
-            receivers: Receivers::new(),
+            receivers: Receivers::default(),
             save_data: None,
             save_colors: vec![],
             preview_handle: None,

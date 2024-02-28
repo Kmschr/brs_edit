@@ -6,7 +6,7 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-brickadia = { version = "0.1", default_features = false, features = ["util", "zlib-ng"] }
+brickadia = { version = "0.1", default_features = false, features = ["util", "zlib-ng", "serialize"] }
 dirs = "5.0"
 eframe = "0.26"
 egui = "0.26"
@@ -15,3 +15,4 @@ image = "0.24.5"
 itertools = "0.12"
 num-format = "0.4.4"
 rfd = "0.14"
+serde_json = "1.0"
