@@ -183,7 +183,7 @@ impl EditorApp {
         }
     }
 
-    pub fn choose_export_palette(&mut self) {
+    pub fn _choose_export_palette(&mut self) {
         if self.receivers.save_palette_path_reciever.is_none() {
             if let Some(save_data) = &self.save_data {
                 if save_data.header2.colors.is_empty() {
