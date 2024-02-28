@@ -1,5 +1,4 @@
-// #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")] // hide
-// console window on Windows in release
+#![cfg_attr(not(debug_assertions), windows_subsystem = "windows")] // hide console window on Windows in release
 mod delete;
 mod editor;
 mod explorer;
@@ -19,7 +18,7 @@ use file_dialog::default_build_directory;
 use std::path::PathBuf;
 use std::sync::mpsc::Receiver;
 
-const DEFAULT_WINDOW_SIZE: Vec2 = Vec2::new(1920.0, 1080.0);
+const DEFAULT_WINDOW_SIZE: Vec2 = Vec2::new(1600.0, 900.0);
 
 fn main() {
     let icon = egui::IconData {
@@ -51,8 +50,8 @@ struct EditorApp {
     save_colors: Vec<([f32; 4], u32)>,
     preview_handle: Option<TextureHandle>,
     show_delete_window: bool,
-    show_components_window: bool,
-    show_ownership_window: bool,
+    _show_components_window: bool,
+    _show_ownership_window: bool,
 }
 
 // use channels to get paths back from the native file dialog in another thread
@@ -99,8 +98,8 @@ impl EditorApp {
             save_colors: vec![],
             preview_handle: None,
             show_delete_window: false,
-            show_components_window: false,
-            show_ownership_window: false,
+            _show_components_window: false,
+            _show_ownership_window: false,
         }
     }
 }
